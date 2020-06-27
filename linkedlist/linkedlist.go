@@ -499,17 +499,15 @@ func (l *LinkedList) Sort(compare func(v1, v2 interface{}) int) {
 // LinkedList implements the fmt.Stringer interface.
 // Time complexity: O(n), where n is the current length of 'l'.
 func (l *LinkedList) String() string {
-	str := "["
 	if l.IsEmpty() {
-		str += "]"
-	} else {
-		e := l.front
-		for ; e.next != nil; e = e.next {
-			str += fmt.Sprintf("%v ", e.value)
-		}
-		str += fmt.Sprintf("%v]", e.value)
+		return "[]"
 	}
-	return str
+	str := "["
+	e := l.front
+	for ; e.next != nil; e = e.next {
+		str += fmt.Sprintf("%v ", e.value)
+	}
+	return str + fmt.Sprintf("%v]", e.value)
 }
 
 // Swap swaps the values between elements 'a' and 'b'.

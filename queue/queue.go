@@ -216,15 +216,13 @@ func (q *Queue) Slice() []interface{} {
 // Queue implements the fmt.Stringer interface.
 // Time complexity: O(n), where n is the current length of 'q'.
 func (q *Queue) String() string {
-	str := "["
 	if q.IsEmpty() {
-		str += "]"
-	} else {
-		n := q.front
-		for ; n.next != nil; n = n.next {
-			str += fmt.Sprintf("%v ", n.value)
-		}
-		str += fmt.Sprintf("%v]", n.value)
+		return "[]"
 	}
-	return str
+	n := q.front
+	str := "["
+	for ; n.next != nil; n = n.next {
+		str += fmt.Sprintf("%v ", n.value)
+	}
+	return str + fmt.Sprintf("%v]", n.value)
 }

@@ -4,10 +4,7 @@
 // Package sortedset implements a ordered set using an AVL tree.
 package sortedset
 
-import (
-	"fmt"
-	"strings"
-)
+import "fmt"
 
 // node represents a binary tree.
 type node struct {
@@ -379,15 +376,11 @@ func sliceRecursive(n *node, values *[]interface{}) {
 // SortedSet implements the fmt.Stringer interface.
 // Time complexity: O(n), where n is the current length of 's'.
 func (s *SortedSet) String() string {
-	str := "["
 	if s.IsEmpty() {
-		str += "]"
-	} else {
-		str += stringRecursive(s.root)
-		str = strings.TrimRight(str, " ")
-		str += "]"
+		return "[]"
 	}
-	return str
+	str := "[" + stringRecursive(s.root)
+	return str[:len(str)-1] + "]"
 }
 
 // stringRecursive is an auxiliary recursive function of the SortedSet String method.

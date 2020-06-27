@@ -212,15 +212,13 @@ func (s *Stack) Slice() []interface{} {
 // Stack implements the fmt.Stringer interface.
 // Time complexity: O(n), where n is the current length of 's'.
 func (s *Stack) String() string {
-	str := "["
 	if s.IsEmpty() {
-		str += "]"
-	} else {
-		n := s.top
-		for ; n.next != nil; n = n.next {
-			str += fmt.Sprintf("%v ", n.value)
-		}
-		str += fmt.Sprintf("%v]", n.value)
+		return "[]"
 	}
-	return str
+	str := "["
+	n := s.top
+	for ; n.next != nil; n = n.next {
+		str += fmt.Sprintf("%v ", n.value)
+	}
+	return str + fmt.Sprintf("%v]", n.value)
 }
