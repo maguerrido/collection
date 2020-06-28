@@ -3,7 +3,60 @@
 
 package hashmap
 
-import "testing"
+import (
+	coll "github.com/maguerrido/collection"
+	"testing"
+)
+
+type pair struct {
+	bucket int
+	key    coll.Hashable
+	value  interface{}
+}
+
+type key struct {
+	i int
+}
+
+func (k key) Equals(v coll.Hashable) bool {
+	val, ok := v.(key)
+	return ok && k.i == val.i
+}
+func (k key) Hash() int {
+	return k.i
+}
+
+func buckets(cap int, values []pair) [][]pair {
+	buckets := make([][]pair, cap, cap)
+	for _, v := range values {
+		buckets[v.bucket] = append(buckets[v.bucket], v)
+	}
+	return buckets
+}
+func checkBucket(n *node, pairs []pair) bool {
+	i := 0
+	for ; n != nil && i < len(pairs); n, i = n.next, i+1 {
+		if n.key != pairs[i].key || n.value != pairs[i].value {
+			return false
+		}
+	}
+	return n == nil && i == len(pairs)
+}
+func checkBuckets(buckets []*node, pairs [][]pair) bool {
+	for i, b := range buckets {
+		if !checkBucket(b, pairs[i]) {
+			return false
+		}
+	}
+	return true
+}
+func hmByMap(values map[coll.Hashable]interface{}) *HashMap {
+	hm := New(DefaultCapacity, DefaultLoadFactor)
+	for k, v := range values {
+		hm.Push(k, v)
+	}
+	return hm
+}
 
 func TestNew(t *testing.T) {
 	tests := []struct {
@@ -52,6 +105,50 @@ func TestNew(t *testing.T) {
 			}
 			if got, expected := len(hp.buckets), len(test.out.buckets); got != expected {
 				tt.Errorf("Buckets capacity: Got: %v, Expected: %v", got, expected)
+			}
+		})
+	}
+}
+func TestHashMap_Push(t *testing.T) {
+	tests := []struct {
+		name  string
+		key   key
+		value int
+		hm    *HashMap
+		pairs [][]pair
+	}{
+		{"empty", key{0}, 0,
+			New(DefaultCapacity, DefaultLoadFactor),
+			buckets(DefaultCapacity, []pair{
+				{0, key{0}, 0},
+			})},
+		{"!empty/different_bucket", key{0}, 0,
+			hmByMap(map[coll.Hashable]interface{}{
+				key{1}: 1}),
+			buckets(DefaultCapacity, []pair{
+				{1, key{1}, 1},
+				{0, key{0}, 0},
+			})},
+		{"!empty/same_bucket", key{0}, 0,
+			hmByMap(map[coll.Hashable]interface{}{
+				key{16}: 16}),
+			buckets(DefaultCapacity, []pair{
+				{0, key{0}, 0},
+				{0, key{16}, 16},
+			})},
+		{"!empty/update", key{0}, 0,
+			hmByMap(map[coll.Hashable]interface{}{
+				key{0}: 16}), // 16 should be updated by 0
+			buckets(DefaultCapacity, []pair{
+				{0, key{0}, 0},
+			})},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			test.hm.Push(test.key, test.value)
+			if !checkBuckets(test.hm.buckets, test.pairs) {
+				tt.Errorf("checkBuckets: FAIL")
 			}
 		})
 	}

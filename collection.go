@@ -4,6 +4,6 @@
 package collection
 
 type Hashable interface {
-	Equals(v interface{}) bool
+	Equals(v Hashable) bool
 	Hash() int
 }

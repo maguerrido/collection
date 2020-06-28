@@ -23,6 +23,15 @@ func (n *node) clear() {
 	n.hashCode, n.key, n.value, n.next = 0, nil, nil, nil
 }
 
+func (n *node) search(k coll.Hashable) *node {
+	for i := n; i != nil; i = i.next {
+		if i.key.Equals(k) {
+			return i
+		}
+	}
+	return nil
+}
+
 type HashMap struct {
 	buckets    []*node
 	cap, len   int
@@ -54,6 +63,40 @@ func (hm *HashMap) IsEmpty() bool {
 
 func (hm *HashMap) Len() int {
 	return hm.len
+}
+
+func (hm *HashMap) Push(key coll.Hashable, v interface{}) bool {
+	if key == nil {
+		return false
+	}
+	hashCode := key.Hash()
+	hash := hm.hash(hashCode)
+	if hm.buckets[hash] != nil {
+		if found := hm.buckets[hash].search(key); found != nil {
+			found.hashCode = hashCode
+			found.key = key
+			found.value = v
+		} else {
+			newNode := &node{
+				hashCode: hashCode,
+				key:      key,
+				value:    v,
+				next:     hm.buckets[hash],
+			}
+			hm.buckets[hash] = newNode
+			hm.len++
+		}
+	} else {
+		newNode := &node{
+			hashCode: hashCode,
+			key:      key,
+			value:    v,
+			next:     nil,
+		}
+		hm.buckets[hash] = newNode
+		hm.len++
+	}
+	return true
 }
 
 func (hm *HashMap) RemoveAll() {
