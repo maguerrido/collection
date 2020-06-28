@@ -19,6 +19,10 @@ type node struct {
 	next     *node
 }
 
+func (n *node) clear() {
+	n.hashCode, n.key, n.value, n.next = 0, nil, nil, nil
+}
+
 type HashMap struct {
 	buckets    []*node
 	cap, len   int
@@ -38,4 +42,20 @@ func New(cap int, loadFactor float64) *HashMap {
 		len:        0,
 		loadFactor: loadFactor,
 	}
+}
+
+func (hm *HashMap) hash(hashCode int) int {
+	return hashCode % hm.cap
+}
+
+func (hm *HashMap) IsEmpty() bool {
+	return hm.len == 0
+}
+
+func (hm *HashMap) Len() int {
+	return hm.len
+}
+
+func (hm *HashMap) RemoveAll() {
+	hm.buckets, hm.cap, hm.len, hm.loadFactor = nil, 0, 0, 0
 }
