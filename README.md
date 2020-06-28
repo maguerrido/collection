@@ -3,7 +3,7 @@ Collection is a Go library for dealing with abstract data types.
 
 :nerd_face: Currently under development.
 
-:hammer: Working on [HashSet](https://github.com/maguerrido/collection/tree/hashset).
+:hammer: Working on [HashMap](https://github.com/maguerrido/collection/tree/hashmap).
 
 :memo: History:
   * [v0.4.0](https://github.com/maguerrido/collection/releases/tag/v0.4.0) LinkedList implementation.
