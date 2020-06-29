@@ -102,6 +102,10 @@ func (hm *HashMap) IsEmpty() bool {
 	return hm.len == 0
 }
 
+func (hm *HashMap) Len() int {
+	return hm.len
+}
+
 func (hm *HashMap) Map() map[coll.Hashable]interface{} {
 	m := make(map[coll.Hashable]interface{})
 	for _, n := range hm.buckets {
@@ -112,13 +116,12 @@ func (hm *HashMap) Map() map[coll.Hashable]interface{} {
 	return m
 }
 
-func (hm *HashMap) Len() int {
-	return hm.len
-}
-
 func (hm *HashMap) Push(key coll.Hashable, v interface{}) bool {
 	if key == nil {
 		return false
+	}
+	if lenF, capF := float64(hm.len), float64(hm.cap); lenF > capF*hm.loadFactor {
+		hm.reHashing()
 	}
 	hashCode := key.Hash()
 	hash := hm.hash(hashCode)
@@ -148,6 +151,21 @@ func (hm *HashMap) Push(key coll.Hashable, v interface{}) bool {
 		hm.len++
 	}
 	return true
+}
+
+func (hm *HashMap) reHashing() {
+	old := hm.buckets
+	hm.buckets = make([]*node, hm.cap*2, hm.cap*2)
+	hm.cap *= 2
+	hm.len = 0
+	for _, n := range old {
+		for n != nil {
+			next := n.next
+			hm.Push(n.key, n.value)
+			n.clear()
+			n = next
+		}
+	}
 }
 
 func (hm *HashMap) Remove(key coll.Hashable) (v interface{}, ok bool) {

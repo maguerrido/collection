@@ -332,6 +332,54 @@ func TestHashMap_Push(t *testing.T) {
 		})
 	}
 }
+func TestHashMap_PushReHashing(t *testing.T) {
+	hm := NewByMap(map[coll.Hashable]interface{}{
+		key{0}:  0,
+		key{1}:  1,
+		key{2}:  2,
+		key{3}:  3,
+		key{4}:  4,
+		key{5}:  5,
+		key{6}:  6,
+		key{7}:  7,
+		key{8}:  8,
+		key{9}:  9,
+		key{10}: 10,
+		key{11}: 11,
+		key{12}: 12,
+	}, DefaultCapacity, DefaultLoadFactor)
+	inserts := 13
+	capGot, capExpected := hm.cap, DefaultCapacity
+	loadFactorGot, loadFactorExpected := hm.loadFactor, DefaultLoadFactor
+	lenGot, lenExpected := hm.len, inserts
+	lenBucketsGot, lenBucketsExpected := len(hm.buckets), DefaultCapacity
+	if capGot != capExpected ||
+		loadFactorGot != loadFactorExpected ||
+		lenGot != lenExpected ||
+		lenBucketsGot != lenBucketsExpected {
+		t.Errorf("Fail before reHashing")
+		t.Errorf("CapGot: %v, CapExpected: %v\n", capGot, capExpected)
+		t.Errorf("LoadFactorGot: %v, LoadFactorExpected: %v\n", loadFactorGot, loadFactorExpected)
+		t.Errorf("LenGot: %v, LenExpected: %v\n", lenGot, lenExpected)
+		t.Errorf("LenBucketsGot: %v, LenBucketsExpected: %v\n", lenBucketsGot, lenBucketsExpected)
+	}
+	hm.Push(key{13}, 13)
+	capGot, capExpected = hm.cap, DefaultCapacity*2
+	loadFactorGot, loadFactorExpected = hm.loadFactor, DefaultLoadFactor
+	lenGot, lenExpected = hm.len, inserts+1
+	lenBucketsGot, lenBucketsExpected = len(hm.buckets), DefaultCapacity*2
+	if capGot != capExpected ||
+		loadFactorGot != loadFactorExpected ||
+		lenGot != lenExpected ||
+		lenBucketsGot != lenBucketsExpected {
+		t.Errorf("Fail after reHashing")
+		t.Errorf("CapGot: %v, CapExpected: %v\n", capGot, capExpected)
+		t.Errorf("LoadFactorGot: %v, LoadFactorExpected: %v\n", loadFactorGot, loadFactorExpected)
+		t.Errorf("LenGot: %v, LenExpected: %v\n", lenGot, lenExpected)
+		t.Errorf("LenBucketsGot: %v, LenBucketsExpected: %v\n", lenBucketsGot, lenBucketsExpected)
+	}
+
+}
 func TestHashMap_Remove(t *testing.T) {
 	tests := []struct {
 		name    string
