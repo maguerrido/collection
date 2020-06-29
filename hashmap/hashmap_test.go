@@ -109,6 +109,38 @@ func TestNew(t *testing.T) {
 		})
 	}
 }
+func TestNewByMap(t *testing.T) {
+	tests := []struct {
+		name  string
+		in    map[coll.Hashable]interface{}
+		pairs [][]pair
+	}{
+		{"empty", map[coll.Hashable]interface{}{}, buckets(DefaultCapacity, []pair{})},
+		{"!empty",
+			map[coll.Hashable]interface{}{
+				key{0}: 0,
+				key{1}: 1,
+				key{2}: 2,
+				key{3}: 3,
+			},
+			buckets(DefaultCapacity, []pair{
+				{0, key{0}, 0},
+				{1, key{1}, 1},
+				{2, key{2}, 2},
+				{3, key{3}, 3},
+			})},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			hm := NewByMap(test.in, DefaultCapacity, DefaultLoadFactor)
+			if !checkBuckets(hm.buckets, test.pairs) {
+				tt.Errorf("checkBuckets: FAIL")
+			}
+		})
+	}
+}
+
 func TestHashMap_Push(t *testing.T) {
 	tests := []struct {
 		name  string

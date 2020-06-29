@@ -53,6 +53,14 @@ func New(cap int, loadFactor float64) *HashMap {
 	}
 }
 
+func NewByMap(values map[coll.Hashable]interface{}, cap int, loadFactor float64) *HashMap {
+	hm := New(cap, loadFactor)
+	for k, v := range values {
+		hm.Push(k, v)
+	}
+	return hm
+}
+
 func (hm *HashMap) hash(hashCode int) int {
 	return hashCode % hm.cap
 }
