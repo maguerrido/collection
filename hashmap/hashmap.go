@@ -61,6 +61,16 @@ func NewByMap(values map[coll.Hashable]interface{}, cap int, loadFactor float64)
 	return hm
 }
 
+func (hm *HashMap) Clone() *HashMap {
+	clone := New(hm.cap, hm.loadFactor)
+	for _, n := range hm.buckets {
+		for ; n != nil; n = n.next {
+			clone.Push(n.key, n.value)
+		}
+	}
+	return clone
+}
+
 func (hm *HashMap) hash(hashCode int) int {
 	return hashCode % hm.cap
 }

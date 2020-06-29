@@ -63,24 +63,24 @@ func TestNew(t *testing.T) {
 		name       string
 		cap        int
 		loadFactor float64
-		out        HashMap
+		out        *HashMap
 	}{
 		{"default_cap", 0, 0.30,
-			HashMap{
+			&HashMap{
 				buckets:    make([]*node, DefaultCapacity, DefaultCapacity),
 				cap:        DefaultCapacity,
 				len:        0,
 				loadFactor: 0.30,
 			}},
 		{"default_loadFactor", 20, 0,
-			HashMap{
+			&HashMap{
 				buckets:    make([]*node, 20, 20),
 				cap:        20,
 				len:        0,
 				loadFactor: DefaultLoadFactor,
 			}},
 		{"common", 20, 0.80,
-			HashMap{
+			&HashMap{
 				buckets:    make([]*node, 20, 20),
 				cap:        20,
 				len:        0,
@@ -111,9 +111,9 @@ func TestNew(t *testing.T) {
 }
 func TestNewByMap(t *testing.T) {
 	tests := []struct {
-		name  string
-		in    map[coll.Hashable]interface{}
-		pairs [][]pair
+		name    string
+		in      map[coll.Hashable]interface{}
+		buckets [][]pair
 	}{
 		{"empty", map[coll.Hashable]interface{}{}, buckets(DefaultCapacity, []pair{})},
 		{"!empty",
@@ -134,13 +134,49 @@ func TestNewByMap(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			hm := NewByMap(test.in, DefaultCapacity, DefaultLoadFactor)
-			if !checkBuckets(hm.buckets, test.pairs) {
+			if !checkBuckets(hm.buckets, test.buckets) {
 				tt.Errorf("checkBuckets: FAIL")
 			}
 		})
 	}
 }
 
+func TestHashMap_Clone(t *testing.T) {
+	tests := []struct {
+		name    string
+		hm      *HashMap
+		buckets [][]pair
+	}{
+		{"empty", New(DefaultCapacity, DefaultLoadFactor), buckets(DefaultCapacity, []pair{})},
+		{"!empty", NewByMap(map[coll.Hashable]interface{}{
+			key{0}: 0,
+			key{1}: 1,
+			key{2}: 2,
+		}, 20, 0.70), buckets(20, []pair{
+			{0, key{0}, 0},
+			{1, key{1}, 1},
+			{2, key{2}, 2},
+		})},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			clone := test.hm.Clone()
+			if !checkBuckets(clone.buckets, test.buckets) {
+				tt.Errorf("checkBuckets: FAIL")
+			}
+			if got, expected := clone.len, test.hm.len; got != expected {
+				tt.Errorf("Got: %v, Epected: %v", got, expected)
+			}
+			if got, expected := clone.cap, test.hm.cap; got != expected {
+				tt.Errorf("Got: %v, Epected: %v", got, expected)
+			}
+			if got, expected := clone.loadFactor, test.hm.loadFactor; got != expected {
+				tt.Errorf("Got: %v, Epected: %v", got, expected)
+			}
+		})
+	}
+}
 func TestHashMap_Push(t *testing.T) {
 	tests := []struct {
 		name  string
