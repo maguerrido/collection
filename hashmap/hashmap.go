@@ -72,6 +72,16 @@ func (hm *HashMap) Clone() *HashMap {
 	return clone
 }
 
+func (hm *HashMap) Do(procedures ...func(v interface{})) {
+	for _, n := range hm.buckets {
+		for ; n != nil; n = n.next {
+			for _, procedure := range procedures {
+				procedure(n.value)
+			}
+		}
+	}
+}
+
 func (hm *HashMap) Get(key coll.Hashable) (v interface{}, ok bool) {
 	if key == nil {
 		return nil, false

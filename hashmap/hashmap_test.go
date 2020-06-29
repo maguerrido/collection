@@ -4,6 +4,7 @@
 package hashmap
 
 import (
+	"fmt"
 	coll "github.com/maguerrido/collection"
 	"testing"
 )
@@ -174,6 +175,52 @@ func TestHashMap_Clone(t *testing.T) {
 			if got, expected := clone.loadFactor, test.hm.loadFactor; got != expected {
 				tt.Errorf("Got: %v, Epected: %v", got, expected)
 			}
+		})
+	}
+}
+func TestHashMap_Do(t *testing.T) {
+	strResult := "P1:0 P2:0 P1:1 P2:1 P1:2 P2:2 P1:3 P2:3 "
+	str := ""
+	procedure1 := func(v interface{}) {
+		str += fmt.Sprintf("P1:%v ", v)
+	}
+	procedure2 := func(v interface{}) {
+		str += fmt.Sprintf("P2:%v ", v)
+	}
+	tests := []struct {
+		name string
+		hm   *HashMap
+		in   []func(v interface{})
+	}{
+		{"empty", New(DefaultCapacity, DefaultLoadFactor), []func(v interface{}){procedure1, procedure2}},
+		{"!empty/emptyParams", NewByMap(map[coll.Hashable]interface{}{
+			key{0}: 0,
+			key{1}: 1,
+			key{2}: 2,
+			key{3}: 3,
+		}, DefaultCapacity, DefaultLoadFactor), []func(v interface{}){}},
+		{"!empty", NewByMap(map[coll.Hashable]interface{}{
+			key{0}: 0,
+			key{1}: 1,
+			key{2}: 2,
+			key{3}: 3,
+		}, DefaultCapacity, DefaultLoadFactor), []func(v interface{}){procedure1, procedure2}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			test.hm.Do(test.in...)
+			switch test.name {
+			case "empty", "!empty/emptyParams":
+				if str != "" {
+					tt.Errorf("Do: FAIL")
+				}
+			case "!empty":
+				if str != strResult {
+					tt.Errorf("Do: FAIL")
+				}
+			}
+			str = ""
 		})
 	}
 }
