@@ -4,6 +4,7 @@
 package hashmap
 
 import (
+	"fmt"
 	coll "github.com/maguerrido/collection"
 )
 
@@ -141,4 +142,17 @@ func (hm *HashMap) Push(key coll.Hashable, v interface{}) bool {
 
 func (hm *HashMap) RemoveAll() {
 	hm.buckets, hm.cap, hm.len, hm.loadFactor = nil, 0, 0, 0
+}
+
+func (hm *HashMap) String() string {
+	if hm.IsEmpty() {
+		return "[]"
+	}
+	str := "["
+	for _, n := range hm.buckets {
+		for ; n != nil; n = n.next {
+			str += fmt.Sprintf("%v:%v ", n.key, n.value)
+		}
+	}
+	return str[:len(str)-1] + "]"
 }
