@@ -140,6 +140,34 @@ func (hm *HashMap) Push(key coll.Hashable, v interface{}) bool {
 	return true
 }
 
+func (hm *HashMap) Remove(key coll.Hashable) (v interface{}, ok bool) {
+	hash := hm.hash(key.Hash())
+	n := hm.buckets[hash]
+	if n == nil {
+		return nil, false
+	}
+	if n.key.Equals(key) {
+		v := n.value
+		hm.buckets[hash] = n.next
+		n.clear()
+		hm.len--
+		return v, true
+	}
+
+	for n.next != nil && !n.next.key.Equals(key) {
+		n = n.next
+	}
+	if n.next != nil {
+		v := n.next.value
+		toRemove := n.next
+		n.next = toRemove.next
+		toRemove.clear()
+		hm.len--
+		return v, true
+	}
+	return nil, false
+}
+
 func (hm *HashMap) RemoveAll() {
 	hm.buckets, hm.cap, hm.len, hm.loadFactor = nil, 0, 0, 0
 }

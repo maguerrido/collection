@@ -285,3 +285,72 @@ func TestHashMap_Push(t *testing.T) {
 		})
 	}
 }
+func TestHashMap_Remove(t *testing.T) {
+	tests := []struct {
+		name    string
+		hm      *HashMap
+		in      key
+		vOut    interface{}
+		okOut   bool
+		buckets [][]pair
+	}{
+		{"empty", New(DefaultCapacity, DefaultLoadFactor), key{0}, nil, false, buckets(DefaultCapacity, []pair{})},
+		{"!empty/false", NewByMap(map[coll.Hashable]interface{}{
+			key{1}: 1,
+		}, DefaultCapacity, DefaultLoadFactor), key{0}, nil, false, buckets(DefaultCapacity, []pair{
+			{1, key{1}, 1},
+		})},
+		{"!empty/true/middle", nil, key{0}, 0, true, buckets(DefaultCapacity, []pair{
+			{0, key{16}, 16},
+			{0, key{32}, 32},
+			{14, key{14}, 14},
+		})},
+		{"!empty/true/front", nil, key{0}, 0, true, buckets(DefaultCapacity, []pair{
+			{0, key{16}, 16},
+			{0, key{32}, 32},
+			{14, key{14}, 14},
+		})},
+		{"!empty/true/back", nil, key{0}, 0, true, buckets(DefaultCapacity, []pair{
+			{0, key{16}, 16},
+			{0, key{32}, 32},
+			{14, key{14}, 14},
+		})},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			switch test.name {
+			case "!empty/true/middle":
+				test.hm = New(DefaultCapacity, DefaultLoadFactor)
+				test.hm.Push(key{32}, 32)
+				test.hm.Push(key{0}, 0)
+				test.hm.Push(key{16}, 16)
+				test.hm.Push(key{14}, 14)
+			case "!empty/true/front":
+				test.hm = New(DefaultCapacity, DefaultLoadFactor)
+				test.hm.Push(key{32}, 32)
+				test.hm.Push(key{16}, 16)
+				test.hm.Push(key{0}, 0)
+				test.hm.Push(key{14}, 14)
+			case "!empty/true/back":
+				test.hm = New(DefaultCapacity, DefaultLoadFactor)
+				test.hm.Push(key{0}, 0)
+				test.hm.Push(key{32}, 32)
+				test.hm.Push(key{16}, 16)
+				test.hm.Push(key{14}, 14)
+			}
+			vGot, okGot := test.hm.Remove(test.in)
+			vExpected := test.vOut
+			okExpected := test.okOut
+			if vGot != vExpected {
+				tt.Errorf("Got: %v, Expected: %v", vGot, vExpected)
+			}
+			if okGot != okExpected {
+				tt.Errorf("Got: %v, Expected: %v", okGot, okExpected)
+			}
+			if !checkBuckets(test.hm.buckets, test.buckets) {
+				tt.Errorf("checkBuckets: FAIL")
+			}
+		})
+	}
+}
