@@ -354,3 +354,55 @@ func TestHashMap_Remove(t *testing.T) {
 		})
 	}
 }
+func TestHashMap_Search(t *testing.T) {
+	tests := []struct {
+		name string
+		hm   *HashMap
+		in   interface{}
+		out  coll.Hashable
+	}{
+		{"empty", New(DefaultCapacity, DefaultLoadFactor), 0, nil},
+		{"!empty/false", NewByMap(map[coll.Hashable]interface{}{
+			key{1}: 1,
+		}, DefaultCapacity, DefaultLoadFactor), 0, nil},
+		{"!empty/true", NewByMap(map[coll.Hashable]interface{}{
+			key{13}: 13,
+		}, DefaultCapacity, DefaultLoadFactor), 13, key{13}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			if got, expected := test.hm.Search(test.in), test.out; got != expected {
+				tt.Errorf("Got: %v, Expected: %v", got, expected)
+			}
+		})
+	}
+}
+func TestHashMap_SearchByComparator(t *testing.T) {
+	tests := []struct {
+		name string
+		hm   *HashMap
+		in   interface{}
+		out  coll.Hashable
+	}{
+		{"empty", New(DefaultCapacity, DefaultLoadFactor), 0, nil},
+		{"!empty/false", NewByMap(map[coll.Hashable]interface{}{
+			key{1}: 1,
+		}, DefaultCapacity, DefaultLoadFactor), 0, nil},
+		{"!empty/true", NewByMap(map[coll.Hashable]interface{}{
+			key{13}: 13,
+		}, DefaultCapacity, DefaultLoadFactor), 13, key{13}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			if got, expected := test.hm.SearchByComparator(test.in, func(v1, v2 interface{}) bool {
+				i1, ok1 := v1.(int)
+				i2, ok2 := v2.(int)
+				return ok1 && ok2 && i1 == i2
+			}), test.out; got != expected {
+				tt.Errorf("Got: %v, Expected: %v", got, expected)
+			}
+		})
+	}
+}

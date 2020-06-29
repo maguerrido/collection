@@ -172,6 +172,28 @@ func (hm *HashMap) RemoveAll() {
 	hm.buckets, hm.cap, hm.len, hm.loadFactor = nil, 0, 0, 0
 }
 
+func (hm *HashMap) Search(v interface{}) coll.Hashable {
+	for _, n := range hm.buckets {
+		for ; n != nil; n = n.next {
+			if n.value == v {
+				return n.key
+			}
+		}
+	}
+	return nil
+}
+
+func (hm *HashMap) SearchByComparator(v interface{}, equals func(v1, v2 interface{}) bool) coll.Hashable {
+	for _, n := range hm.buckets {
+		for ; n != nil; n = n.next {
+			if equals(n.value, v) {
+				return n.key
+			}
+		}
+	}
+	return nil
+}
+
 func (hm *HashMap) String() string {
 	if hm.IsEmpty() {
 		return "[]"
