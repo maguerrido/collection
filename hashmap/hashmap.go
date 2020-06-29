@@ -91,6 +91,16 @@ func (hm *HashMap) IsEmpty() bool {
 	return hm.len == 0
 }
 
+func (hm *HashMap) Map() map[coll.Hashable]interface{} {
+	m := make(map[coll.Hashable]interface{})
+	for _, n := range hm.buckets {
+		for ; n != nil; n = n.next {
+			m[n.key] = n.value
+		}
+	}
+	return m
+}
+
 func (hm *HashMap) Len() int {
 	return hm.len
 }

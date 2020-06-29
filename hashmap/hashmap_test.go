@@ -209,6 +209,38 @@ func TestHashMap_Get(t *testing.T) {
 		})
 	}
 }
+func TestHashMap_Map(t *testing.T) {
+	tests := []struct {
+		name string
+		hm   *HashMap
+		out  map[coll.Hashable]interface{}
+	}{
+		{"empty", New(DefaultCapacity, DefaultLoadFactor), map[coll.Hashable]interface{}{}},
+		{"!empty", NewByMap(map[coll.Hashable]interface{}{
+			key{0}:  0,
+			key{5}:  5,
+			key{16}: 16,
+		}, DefaultCapacity, DefaultLoadFactor), map[coll.Hashable]interface{}{
+			key{0}:  0,
+			key{16}: 16,
+			key{5}:  5,
+		}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			m := test.hm.Map()
+			if got, expected := len(m), len(test.out); got != expected {
+				tt.Errorf("Got: %v, Expected: %v", got, expected)
+			}
+			for k, got := range m {
+				if expected := test.out[k]; got != expected {
+					tt.Errorf("Got: %v, Expected: %v", got, expected)
+				}
+			}
+		})
+	}
+}
 func TestHashMap_Push(t *testing.T) {
 	tests := []struct {
 		name  string
