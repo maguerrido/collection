@@ -71,6 +71,18 @@ func (hm *HashMap) Clone() *HashMap {
 	return clone
 }
 
+func (hm *HashMap) Get(key coll.Hashable) (v interface{}, ok bool) {
+	if key == nil {
+		return nil, false
+	}
+	hash := hm.hash(key.Hash())
+	if found := hm.buckets[hash].search(key); found == nil {
+		return nil, false
+	} else {
+		return found.value, true
+	}
+}
+
 func (hm *HashMap) hash(hashCode int) int {
 	return hashCode % hm.cap
 }

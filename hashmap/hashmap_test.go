@@ -177,6 +177,38 @@ func TestHashMap_Clone(t *testing.T) {
 		})
 	}
 }
+func TestHashMap_Get(t *testing.T) {
+	tests := []struct {
+		name  string
+		hm    *HashMap
+		in    key
+		vOut  interface{}
+		okOut bool
+	}{
+		{"empty", New(DefaultCapacity, DefaultLoadFactor), key{0}, nil, false},
+		{"empty/false", NewByMap(map[coll.Hashable]interface{}{
+			key{0}: 0,
+		}, DefaultCapacity, DefaultLoadFactor), key{1}, nil, false},
+		{"empty/true", NewByMap(map[coll.Hashable]interface{}{
+			key{0}:  0,
+			key{15}: 15,
+		}, DefaultCapacity, DefaultLoadFactor), key{15}, 15, true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			vGot, okGot := test.hm.Get(test.in)
+			vExpected := test.vOut
+			okExpected := test.okOut
+			if vGot != vExpected {
+				tt.Errorf("Got: %v, Expected: %v", vGot, vExpected)
+			}
+			if okGot != okExpected {
+				tt.Errorf("Got: %v, Expected: %v", okGot, okExpected)
+			}
+		})
+	}
+}
 func TestHashMap_Push(t *testing.T) {
 	tests := []struct {
 		name  string
