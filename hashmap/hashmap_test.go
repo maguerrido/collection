@@ -291,31 +291,35 @@ func TestHashMap_Map(t *testing.T) {
 func TestHashMap_Push(t *testing.T) {
 	tests := []struct {
 		name  string
-		key   key
+		key   coll.Hashable
 		value int
+		out   bool
 		hm    *HashMap
 		pairs [][]pair
 	}{
-		{"empty", key{0}, 0,
+		{"empty", key{0}, 0, true,
 			New(DefaultCapacity, DefaultLoadFactor),
 			buckets(DefaultCapacity, []pair{
 				{0, key{0}, 0},
 			})},
-		{"!empty/different_bucket", key{0}, 0,
+		{"empty/nilKey", nil, 0, false,
+			New(DefaultCapacity, DefaultLoadFactor),
+			buckets(DefaultCapacity, []pair{})},
+		{"!empty/different_bucket", key{0}, 0, true,
 			hmByMap(map[coll.Hashable]interface{}{
 				key{1}: 1}),
 			buckets(DefaultCapacity, []pair{
 				{1, key{1}, 1},
 				{0, key{0}, 0},
 			})},
-		{"!empty/same_bucket", key{0}, 0,
+		{"!empty/same_bucket", key{0}, 0, true,
 			hmByMap(map[coll.Hashable]interface{}{
 				key{16}: 16}),
 			buckets(DefaultCapacity, []pair{
 				{0, key{0}, 0},
 				{0, key{16}, 16},
 			})},
-		{"!empty/update", key{0}, 0,
+		{"!empty/update", key{0}, 0, true,
 			hmByMap(map[coll.Hashable]interface{}{
 				key{0}: 16}), // 16 should be updated by 0
 			buckets(DefaultCapacity, []pair{
@@ -325,7 +329,9 @@ func TestHashMap_Push(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			test.hm.Push(test.key, test.value)
+			if got, expected := test.hm.Push(test.key, test.value), test.out; got != expected {
+				tt.Errorf("Got: %v, Expected: %v", got, expected)
+			}
 			if !checkBuckets(test.hm.buckets, test.pairs) {
 				tt.Errorf("checkBuckets: FAIL")
 			}
@@ -384,15 +390,22 @@ func TestHashMap_Remove(t *testing.T) {
 	tests := []struct {
 		name    string
 		hm      *HashMap
-		in      key
+		in      coll.Hashable
 		vOut    interface{}
 		okOut   bool
 		buckets [][]pair
 	}{
 		{"empty", New(DefaultCapacity, DefaultLoadFactor), key{0}, nil, false, buckets(DefaultCapacity, []pair{})},
-		{"!empty/false", NewByMap(map[coll.Hashable]interface{}{
+		{"!empty/nilKey", NewByMap(map[coll.Hashable]interface{}{
 			key{1}: 1,
+		}, DefaultCapacity, DefaultLoadFactor), nil, nil, false, buckets(DefaultCapacity, []pair{
+			{1, key{1}, 1},
+		})},
+		{"!empty/false", NewByMap(map[coll.Hashable]interface{}{
+			key{1}:  1,
+			key{16}: 16,
 		}, DefaultCapacity, DefaultLoadFactor), key{0}, nil, false, buckets(DefaultCapacity, []pair{
+			{0, key{16}, 16},
 			{1, key{1}, 1},
 		})},
 		{"!empty/true/middle", nil, key{0}, 0, true, buckets(DefaultCapacity, []pair{
