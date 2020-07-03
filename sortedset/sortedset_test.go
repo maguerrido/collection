@@ -56,7 +56,7 @@ func checkValues(n *node, values []interface{}) bool {
 		}
 	}
 	for _, v := range values {
-		if !containsRecursive(v, n) {
+		if !containsRecursive(v, n, compareInt) {
 			return false
 		}
 	}
@@ -160,27 +160,7 @@ func TestSortedSet_Contains(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			if got, expected := test.s.Contains(test.in), test.out; got != expected {
-				tt.Errorf("Got: %v, Expected: %v", got, expected)
-			}
-		})
-	}
-}
-func TestSortedSet_ContainsByComparator(t *testing.T) {
-	tests := []struct {
-		name string
-		s    *SortedSet
-		in   int
-		out  bool
-	}{
-		{"empty", New(), 1, false},
-		{"!empty/false", sortedset(10), 20, false},
-		{"!empty/true", sortedset(10), 5, true},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(tt *testing.T) {
-			if got, expected := test.s.ContainsByComparator(test.in, compareInt), test.out; got != expected {
+			if got, expected := test.s.Contains(test.in, compareInt), test.out; got != expected {
 				tt.Errorf("Got: %v, Expected: %v", got, expected)
 			}
 		})

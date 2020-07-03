@@ -1,14 +1,14 @@
 // Copyright 2020 maguerrido <mauricio.aguerrido@gmail.com>. All rights reserved.
 // Use of this source code is governed by MIT license that can be found in the LICENSE file.
 
-package linkedlist
+package list
 
 import (
 	"fmt"
 	"testing"
 )
 
-func checkValuesAndOrder(l *LinkedList, values []interface{}) bool {
+func checkValuesAndOrder(l *List, values []interface{}) bool {
 	if l.Len() != len(values) {
 		return false
 	}
@@ -28,7 +28,7 @@ func checkValuesAndOrder(l *LinkedList, values []interface{}) bool {
 	return true
 
 }
-func checkZeroValue(l *LinkedList) bool {
+func checkZeroValue(l *List) bool {
 	return l.Front() == nil && l.Back() == nil && l.Len() == 0
 }
 func compareInt(v1, v2 interface{}) int {
@@ -67,10 +67,10 @@ func TestNewBySlice(t *testing.T) {
 	}
 }
 
-func TestLinkedList_Clone(t *testing.T) {
+func TestList_Clone(t *testing.T) {
 	tests := []struct {
 		name   string
-		l      *LinkedList
+		l      *List
 		values []interface{}
 	}{
 		{"empty", New(), []interface{}{}},
@@ -86,7 +86,7 @@ func TestLinkedList_Clone(t *testing.T) {
 		})
 	}
 }
-func TestLinkedList_Do(t *testing.T) {
+func TestList_Do(t *testing.T) {
 	strResult := "P1:0 P2:0 P1:1 P2:1 P1:3 P2:3 P1:5 P2:5 "
 	str := ""
 	procedure1 := func(v interface{}) {
@@ -97,7 +97,7 @@ func TestLinkedList_Do(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		l    *LinkedList
+		l    *List
 		in   []func(v interface{})
 	}{
 		{"empty", New(), []func(v interface{}){procedure1, procedure2}},
@@ -114,11 +114,11 @@ func TestLinkedList_Do(t *testing.T) {
 		})
 	}
 }
-func TestLinkedList_Equals(t *testing.T) {
+func TestList_Equals(t *testing.T) {
 	tests := []struct {
 		name string
-		l    *LinkedList
-		in   *LinkedList
+		l    *List
+		in   *List
 		out  bool
 	}{
 		{"empty/true", New(), New(), true},
@@ -136,11 +136,11 @@ func TestLinkedList_Equals(t *testing.T) {
 		})
 	}
 }
-func TestLinkedList_EqualsByComparator(t *testing.T) {
+func TestList_EqualsByComparator(t *testing.T) {
 	tests := []struct {
 		name string
-		l    *LinkedList
-		in   *LinkedList
+		l    *List
+		in   *List
 		out  bool
 	}{
 		{"empty/true", New(), New(), true},
@@ -159,10 +159,10 @@ func TestLinkedList_EqualsByComparator(t *testing.T) {
 		})
 	}
 }
-func TestLinkedList_Get(t *testing.T) {
+func TestList_Get(t *testing.T) {
 	tests := []struct {
 		name     string
-		l        *LinkedList
+		l        *List
 		in       int
 		out      interface{}
 		contains bool
@@ -187,7 +187,7 @@ func TestLinkedList_Get(t *testing.T) {
 		})
 	}
 }
-func TestLinkedList_MoveAfter(t *testing.T) {
+func TestList_MoveAfter(t *testing.T) {
 	t.Run("empty/false", func(tt *testing.T) {
 		l := New()
 		l2 := NewBySlice([]interface{}{0, 1, 2})
@@ -211,7 +211,7 @@ func TestLinkedList_MoveAfter(t *testing.T) {
 		e := l.Get(0)
 		mark := l.Get(1)
 		if !l.MoveAfter(e, mark) {
-			tt.Errorf("LinkedList.MoveAfter() -> False: Fail")
+			tt.Errorf("List.MoveAfter() -> False: Fail")
 		}
 		if !checkValuesAndOrder(l, []interface{}{1, 0}) {
 			tt.Errorf("checkValuesAndOrder: FAIL")
@@ -262,7 +262,7 @@ func TestLinkedList_MoveAfter(t *testing.T) {
 		}
 	})
 }
-func TestLinkedList_MoveBefore(t *testing.T) {
+func TestList_MoveBefore(t *testing.T) {
 	t.Run("empty/false", func(tt *testing.T) {
 		l := New()
 		l2 := NewBySlice([]interface{}{0, 1, 2})
@@ -337,7 +337,7 @@ func TestLinkedList_MoveBefore(t *testing.T) {
 		}
 	})
 }
-func TestLinkedList_PushAfter(t *testing.T) {
+func TestList_PushAfter(t *testing.T) {
 	t.Run("empty/false", func(tt *testing.T) {
 		l := New()
 		l2 := NewBySlice([]interface{}{0})
@@ -377,10 +377,10 @@ func TestLinkedList_PushAfter(t *testing.T) {
 		}
 	})
 }
-func TestLinkedList_PushBack(t *testing.T) {
+func TestList_PushBack(t *testing.T) {
 	tests := []struct {
 		name      string
-		l         *LinkedList
+		l         *List
 		in        int
 		toCompare []interface{}
 	}{
@@ -397,11 +397,11 @@ func TestLinkedList_PushBack(t *testing.T) {
 		})
 	}
 }
-func TestLinkedList_PushBackList(t *testing.T) {
+func TestList_PushBackList(t *testing.T) {
 	tests := []struct {
 		name      string
-		l         *LinkedList
-		in        *LinkedList
+		l         *List
+		in        *List
 		toCompare []interface{}
 	}{
 		{"empty/empty", New(), New(), []interface{}{}},
@@ -419,7 +419,7 @@ func TestLinkedList_PushBackList(t *testing.T) {
 		})
 	}
 }
-func TestLinkedList_PushBefore(t *testing.T) {
+func TestList_PushBefore(t *testing.T) {
 	t.Run("empty/false", func(tt *testing.T) {
 		l := New()
 		l2 := NewBySlice([]interface{}{0})
@@ -459,10 +459,10 @@ func TestLinkedList_PushBefore(t *testing.T) {
 		}
 	})
 }
-func TestLinkedList_PushFront(t *testing.T) {
+func TestList_PushFront(t *testing.T) {
 	tests := []struct {
 		name      string
-		l         *LinkedList
+		l         *List
 		in        int
 		toCompare []interface{}
 	}{
@@ -479,11 +479,11 @@ func TestLinkedList_PushFront(t *testing.T) {
 		})
 	}
 }
-func TestLinkedList_PushFrontList(t *testing.T) {
+func TestList_PushFrontList(t *testing.T) {
 	tests := []struct {
 		name      string
-		l         *LinkedList
-		in        *LinkedList
+		l         *List
+		in        *List
 		toCompare []interface{}
 	}{
 		{"empty/empty", New(), New(), []interface{}{}},
@@ -501,10 +501,10 @@ func TestLinkedList_PushFrontList(t *testing.T) {
 		})
 	}
 }
-func TestLinkedList_Remove(t *testing.T) {
+func TestList_Remove(t *testing.T) {
 	tests := []struct {
 		name      string
-		l         *LinkedList
+		l         *List
 		in        int
 		toCompare []interface{}
 	}{
@@ -523,7 +523,7 @@ func TestLinkedList_Remove(t *testing.T) {
 		})
 	}
 }
-func TestLinkedList_RemoveElement(t *testing.T) {
+func TestList_RemoveElement(t *testing.T) {
 	t.Run("empty", func(tt *testing.T) {
 		l := New()
 		v, ok := l.RemoveElement(l.Front())
@@ -550,7 +550,7 @@ func TestLinkedList_RemoveElement(t *testing.T) {
 		}
 	})
 }
-func TestLinkedList_RemoveFrom(t *testing.T) {
+func TestList_RemoveFrom(t *testing.T) {
 	t.Run("empty", func(tt *testing.T) {
 		l := New()
 		n := l.RemoveFrom(l.Front(), l.Back())
@@ -591,14 +591,14 @@ func TestLinkedList_RemoveFrom(t *testing.T) {
 		}
 	})
 }
-func TestLinkedList_RemoveIf(t *testing.T) {
+func TestList_RemoveIf(t *testing.T) {
 	condition := func(v interface{}) bool {
 		intV := v.(int)
 		return intV > 2
 	}
 	tests := []struct {
 		name      string
-		l         *LinkedList
+		l         *List
 		out       int
 		toCompare []interface{}
 	}{
@@ -619,10 +619,10 @@ func TestLinkedList_RemoveIf(t *testing.T) {
 		})
 	}
 }
-func TestLinkedList_Search(t *testing.T) {
+func TestList_Search(t *testing.T) {
 	tests := []struct {
 		name     string
-		l        *LinkedList
+		l        *List
 		in       int
 		outIndex int
 	}{
@@ -646,10 +646,10 @@ func TestLinkedList_Search(t *testing.T) {
 		})
 	}
 }
-func TestLinkedList_SearchByComparator(t *testing.T) {
+func TestList_SearchByComparator(t *testing.T) {
 	tests := []struct {
 		name     string
-		l        *LinkedList
+		l        *List
 		in       int
 		outIndex int
 	}{
@@ -673,10 +673,10 @@ func TestLinkedList_SearchByComparator(t *testing.T) {
 		})
 	}
 }
-func TestLinkedList_Slice(t *testing.T) {
+func TestList_Slice(t *testing.T) {
 	tests := []struct {
 		name string
-		l    *LinkedList
+		l    *List
 		out  []interface{}
 	}{
 		{"empty", New(), make([]interface{}, 0, 0)},
@@ -698,10 +698,10 @@ func TestLinkedList_Slice(t *testing.T) {
 		})
 	}
 }
-func TestLinkedList_Sort(t *testing.T) {
+func TestList_Sort(t *testing.T) {
 	tests := []struct {
 		name      string
-		l         *LinkedList
+		l         *List
 		toCompare []interface{}
 	}{
 		{"empty", New(), make([]interface{}, 0, 0)},

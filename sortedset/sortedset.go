@@ -1,26 +1,27 @@
 // Copyright 2020 maguerrido <mauricio.aguerrido@gmail.com>. All rights reserved.
 // Use of this source code is governed by MIT license that can be found in the LICENSE file.
 
-// Package sortedset implements a ordered set using an AVL tree.
+// Package sortedset implements an AVL tree with ordered set behaviors.
 package sortedset
 
 import "fmt"
 
-// node represents a binary tree.
+// node of a AVL tree.
 type node struct {
-	// value stored in this node.
+	// value stored in the node.
 	value interface{}
 
 	// left points to a node smaller than this.
 	// right points to a node greater than this.
 	left, right *node
 
-	// h is the current height.
-	// len is the current height.
+	// h is the current height (number of levels in the AVL tree).
+	// len is the current length (number of nodes).
 	h, len int
 }
 
-// clear sets the properties of this node to its zero values.
+// clear sets the properties of the node to its zero values.
+// Time complexity: O(1).
 func (n *node) clear() {
 	n.value, n.left, n.right, n.h, n.len = nil, nil, nil, 0, 0
 }
@@ -28,22 +29,32 @@ func (n *node) clear() {
 // SortedSet represents a AVL tree.
 // The zero value for SortedSet is an empty SortedSet ready to use.
 type SortedSet struct {
-	// root points to the root node in the SortedSet.
+	// root points to the root node in the AVL tree.
 	root *node
 }
 
+// balance returns the balance of the particular AVL tree 'n'.
+// If 'n' equals nil, then return 0.
+// Time complexity: O(1).
 func balance(n *node) int {
 	if n == nil {
 		return 0
 	}
 	return height(n.left) - height(n.right)
 }
+
+// height returns the height of the particular AVL tree 'n'.
+// If 'n' equals nil, then return 0.
+// Time complexity: O(1).
 func height(n *node) int {
 	if n == nil {
 		return 0
 	}
 	return n.h
 }
+
+// leftRotate do the avl tree left rotate with 'n' as a root.
+// Time complexity: O(1).
 func leftRotate(n *node) *node {
 	root := n.right
 	tree := root.left
@@ -55,12 +66,19 @@ func leftRotate(n *node) *node {
 	root.len = 1 + length(root.left) + length(root.right)
 	return root
 }
+
+// length returns the length of the particular AVL tree 'n'.
+// If 'n' equals nil, then return 0.
+// Time complexity: O(1).
 func length(n *node) int {
 	if n == nil {
 		return 0
 	}
 	return n.len
 }
+
+// maxInt returns the biggest integer between 'a' and 'b'.
+// Time complexity: O(1).
 func maxInt(a, b int) int {
 	if a > b {
 		return a
@@ -68,6 +86,9 @@ func maxInt(a, b int) int {
 		return b
 	}
 }
+
+// min returns the minimum value in the avl tree 'n'.
+// Time complexity: O(log(n)), where n is the current length of the AVL tree.
 func min(n *node) *node {
 	if n == nil {
 		return nil
@@ -77,6 +98,9 @@ func min(n *node) *node {
 	}
 	return n
 }
+
+// rightRotate do the avl tree right rotate with 'n' as a root.
+// Time complexity: O(1).
 func rightRotate(n *node) *node {
 	root := n.left
 	tree := root.right
@@ -90,25 +114,26 @@ func rightRotate(n *node) *node {
 }
 
 // New returns a new SortedSet ready to use.
+// Time complexity: O(1).
 func New() *SortedSet {
 	return new(SortedSet)
 }
 
 // NewBySlice returns a new SortedSet with the values stored in the slice.
-// The comparison between values is defined by parameter 'compare'.
-// 'compare' must return a negative int, zero, or a positive int as 'v1' is less than, equal to, or greater than 'v2'.
-// Time complexity: O(n * log n), where n is the current length of 'values'.
+// The comparison to order the values is defined by the parameter 'compare'.
+// The function 'compare' must return a negative int, zero, or a positive int as 'v1' is less than, equal to, or
+//greater than 'v2'.
+// Time complexity: O(n*log(n)), where n is the current length of the slice.
 func NewBySlice(values []interface{}, compare func(v1, v2 interface{}) int) *SortedSet {
-	q := New()
+	s := New()
 	for _, v := range values {
-		q.Push(v, compare)
+		s.Push(v, compare)
 	}
-	return q
+	return s
 }
 
-// Clone returns a new cloned SortedSet of 's'.
-// 's' retains its original state.
-// Time complexity: O(n), where n is the current length of 's'.
+// Clone returns a new cloned SortedSet.
+// Time complexity: O(n), where n is the current length of the set.
 func (s *SortedSet) Clone() *SortedSet {
 	clone := New()
 	clone.root = cloneRecursive(s.root)
@@ -125,50 +150,33 @@ func cloneRecursive(nS *node) *node {
 	return &node{value: nS.value, left: left, right: right, h: nS.h, len: nS.len}
 }
 
-// Contains returns true if 'v' belongs to 's'.
-// Time complexity: O(n), where n is the current length of 's'.
-func (s *SortedSet) Contains(v interface{}) bool {
-	return containsRecursive(v, s.root)
+// Contains returns true if the value 'v' belongs to the set.
+// The comparison to order the values is defined by the parameter 'compare'.
+// The function 'compare' must return a negative int, zero, or a positive int as 'v1' is less than, equal to, or
+//greater than 'v2'.
+// Time complexity: O(log(n)), where n is the current length of the set.
+func (s *SortedSet) Contains(v interface{}, compare func(v1, v2 interface{}) int) bool {
+	return containsRecursive(v, s.root, compare)
 }
 
 // containsRecursive is an auxiliary recursive function of the SortedSet Contains method.
-func containsRecursive(v interface{}, n *node) bool {
-	if n == nil {
-		return false
-	} else if n.value == v {
-		return true
-	} else if containsRecursive(v, n.left) {
-		return true
-	} else {
-		return containsRecursive(v, n.right)
-	}
-}
-
-// Contains returns true if 'v' belongs to 's'.
-// The comparison between values is defined by parameter 'compare'.
-// 'compare' must return a negative int, zero, or a positive int as 'v1' is less than, equal to, or greater than 'v2'.
-// Time complexity: O(log n), where n is the current length of 's'.
-func (s *SortedSet) ContainsByComparator(v interface{}, compare func(v1, v2 interface{}) int) bool {
-	return containsByComparatorRecursive(v, s.root, compare)
-}
-
-// containsByComparatorRecursive is an auxiliary recursive function of the SortedSet ContainsByComparator method.
-func containsByComparatorRecursive(v interface{}, n *node, compare func(v1, v2 interface{}) int) bool {
+func containsRecursive(v interface{}, n *node, compare func(v1, v2 interface{}) int) bool {
 	if n == nil {
 		return false
 	}
 	switch diff := compare(v, n.value); {
 	case diff < 0:
-		return containsByComparatorRecursive(v, n.left, compare)
+		return containsRecursive(v, n.left, compare)
 	case diff > 0:
-		return containsByComparatorRecursive(v, n.right, compare)
+		return containsRecursive(v, n.right, compare)
 	default: // diff == 0
 		return true
 	}
 }
 
-// Do gets the first (minor) value and performs all the procedures, then repeats this with the rest of the values.
-// Time complexity: O(n), where n is the current length of 's'.
+// Do gets the first (minor) value and performs all the procedures, then repeats it with the rest of the values.
+// The set retains its original state.
+// Time complexity: O(n*p), where n is the current length of the set and p is the number of procedures.
 func (s *SortedSet) Do(procedures ...func(v interface{})) {
 	doRecursive(s.root, procedures...)
 }
@@ -185,13 +193,13 @@ func doRecursive(n *node, procedures ...func(v interface{})) {
 	doRecursive(n.right, procedures...)
 }
 
-// IsEmpty returns true if the set has no elements.
+// IsEmpty returns true if the set has no values.
 // Time complexity: O(1).
 func (s *SortedSet) IsEmpty() bool {
 	return s.root == nil
 }
 
-// Len returns the current length.
+// Len returns the current length of the set.
 // Time complexity: O(1).
 func (s *SortedSet) Len() int {
 	if s.IsEmpty() {
@@ -200,8 +208,8 @@ func (s *SortedSet) Len() int {
 	return s.root.len
 }
 
-// Max returns the maximum value.
-// Time complexity: O(log n), where n is the current length of 's'.
+// Max returns the maximum value of the set.
+// Time complexity: O(log(n)), where n is the current length of the set.
 func (s *SortedSet) Max() interface{} {
 	if s.IsEmpty() {
 		return nil
@@ -213,8 +221,8 @@ func (s *SortedSet) Max() interface{} {
 	return n.value
 }
 
-// Min returns the minimum value.
-// Time complexity: O(log n), where n is the current length of 's'.
+// Min returns the minimum value of the set.
+// Time complexity: O(log(n)), where n is the current length of the set.
 func (s *SortedSet) Min() interface{} {
 	if s.IsEmpty() {
 		return nil
@@ -222,11 +230,11 @@ func (s *SortedSet) Min() interface{} {
 	return min(s.root).value
 }
 
-// Push inserts the value 'v' in order.
-// If 'v' already exists, then it will be updated.
-// The comparison between values is defined by parameter 'compare'.
-// 'compare' must return a negative int, zero, or a positive int as 'v1' is less than, equal to, or greater than 'v2'.
-// Time complexity: O(log n), where n is the current length of 's'.
+// Push inserts the value 'v' in an orderly way.
+// The comparison to order the values is defined by the parameter 'compare'.
+// The function 'compare' must return a negative int, zero, or a positive int as 'v1' is less than, equal to, or
+//greater than 'v2'.
+// Time complexity: O(log(n)), where n is the current length of the set.
 func (s *SortedSet) Push(v interface{}, compare func(v1, v2 interface{}) int) {
 	s.root = pushRecursive(v, s.root, compare)
 }
@@ -272,9 +280,10 @@ func pushRecursive(v interface{}, n *node, compare func(v1, v2 interface{}) int)
 }
 
 // Remove removes the value 'v' from the set.
-// The comparison between values is defined by parameter 'compare'.
-// 'compare' must return a negative int, zero, or a positive int as 'v1' is less than, equal to, or greater than 'v2'.
-// Time complexity: O(log n), where n is the current length of 's'.
+// The comparison to order the values is defined by the parameter 'compare'.
+// The function 'compare' must return a negative int, zero, or a positive int as 'v1' is less than, equal to, or
+//greater than 'v2'.
+// Time complexity: O(log(n)), where n is the current length of the set.
 func (s *SortedSet) Remove(v interface{}, compare func(v1, v2 interface{}) int) bool {
 	var removed bool
 	s.root, removed = removeRecursive(v, s.root, compare)
@@ -347,15 +356,15 @@ func removeRecursive(v interface{}, n *node, compare func(v1, v2 interface{}) in
 	return n, removed
 }
 
-// RemoveAll sets the properties of this set to its zero values.
+// RemoveAll sets the properties of the set to its zero values.
 // Time complexity: O(1).
 func (s *SortedSet) RemoveAll() {
 	s.root = nil
 }
 
 // Slice returns a new slice with the values stored in the set keeping its order.
-// 's' retains its original state.
-// Time complexity: O(n), where n is the current length of 's'.
+// The set retains its original state.
+// Time complexity: O(n), where n is the current length of the set.
 func (s *SortedSet) Slice() []interface{} {
 	values := make([]interface{}, 0, s.Len())
 	sliceRecursive(s.root, &values)
@@ -374,7 +383,7 @@ func sliceRecursive(n *node, values *[]interface{}) {
 
 // String returns a representation of the set as a string.
 // SortedSet implements the fmt.Stringer interface.
-// Time complexity: O(n), where n is the current length of 's'.
+// Time complexity: O(n), where n is the current length of the set.
 func (s *SortedSet) String() string {
 	if s.IsEmpty() {
 		return "[]"

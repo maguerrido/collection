@@ -1,74 +1,83 @@
 // Copyright 2020 maguerrido <mauricio.aguerrido@gmail.com>. All rights reserved.
 // Use of this source code is governed by MIT license that can be found in the LICENSE file.
 
-// Package linkedlist implements a list using a doubly-linked list.
-package linkedlist
+// Package list implements a doubly-linked list.
+package list
 
 import "fmt"
 
 // Element of a list.
 type Element struct {
-	// value stored in this element.
+	// value stored in the element.
 	value interface{}
 
-	// next and prev point to the next and previous element.
-	// If this element is the front element then prev points to nil.
-	// If this element is the back element then prev points to nil.
+	// next points to the next node.
+	// prev points to the previous node.
+	// If the element is the front or back element, then next or prev points to nil respectively.
 	next, prev *Element
 
-	// parent points to the list containing this element.
-	parent *LinkedList
+	// parent points to the list containing the element.
+	parent *List
 }
 
-// clear sets the properties of this element to its zero values.
+// clear sets the properties of the element to its zero values.
+// Time complexity: O(1).
 func (e *Element) clear() {
 	e.value, e.next, e.prev, e.parent = nil, nil, nil, nil
 }
 
-// Next returns the next element to this.
+// Next returns the next list element.
+// If this node is the back node, then returns nil.
+// Time complexity: O(1).
 func (e *Element) Next() *Element {
 	return e.next
 }
 
 // Parent returns the list containing this element.
-func (e *Element) Parent() *LinkedList {
+// Time complexity: O(1).
+func (e *Element) Parent() *List {
 	return e.parent
 }
 
-// Prev returns the previous element to this.
+// Prev returns the previous list element.
+// If this node is the front node, then returns nil.
+// Time complexity: O(1).
 func (e *Element) Prev() *Element {
 	return e.prev
 }
 
 // Set updates the value stored in this element.
+// Time complexity: O(1).
 func (e *Element) Set(v interface{}) {
 	e.value = v
 }
 
 // Value returns the value stored in this element.
+// Time complexity: O(1).
 func (e *Element) Value() interface{} {
 	return e.value
 }
 
-// LinkedList represents a doubly-linked list.
-// The zero value for LinkedList is an empty LinkedList ready to use.
-type LinkedList struct {
-	// front points to the front (first) element on the list.
-	// back points to the back (last) element on the list.
+// List represents a doubly-linked list.
+// The zero value for List is an empty List ready to use.
+type List struct {
+	// front points to the front (first) element in the list.
+	// back points to the back (last) element in the list.
 	front, back *Element
 
-	// len is the current length.
+	// len is the current length (number of elements).
 	len int
 }
 
-// New returns a new LinkedList ready to use.
-func New() *LinkedList {
-	return new(LinkedList)
+// New returns a new List ready to use.
+// Time complexity: O(1).
+func New() *List {
+	return new(List)
 }
 
-// NewBySlice returns a new LinkedList with the values stored in the slice keeping its order.
-// Time complexity: O(n), where n is the current length of 'values'.
-func NewBySlice(values []interface{}) *LinkedList {
+// NewBySlice returns a new List with the values stored in the slice keeping its order.
+// Time complexity: O(n), where n is the current length of the slice.
+func NewBySlice(values []interface{}) *List {
 	l := New()
 	for _, v := range values {
 		l.PushBack(v)
@@ -77,19 +86,18 @@ func NewBySlice(values []interface{}) *LinkedList {
 }
 
 // Back returns the back element.
-// If the list is empty returns nil.
+// If the list is empty, then returns nil.
 // Time complexity: O(1).
-func (l *LinkedList) Back() *Element {
+func (l *List) Back() *Element {
 	if l.IsEmpty() {
 		return nil
 	}
 	return l.back
 }
 
-// Clone returns a new cloned LinkedList of 'l'.
-// 'l' retains its original state.
-// Time complexity: O(n), where n is the current length of 'l'.
-func (l *LinkedList) Clone() *LinkedList {
+// Clone returns a new cloned List.
+// Time complexity: O(n), where n is the current length of the list.
+func (l *List) Clone() *List {
 	clone := New()
 	for e := l.front; e != nil; e = e.next {
 		clone.PushBack(e.value)
@@ -97,16 +105,16 @@ func (l *LinkedList) Clone() *LinkedList {
 	return clone
 }
 
-// Contains returns true if 'e' belongs to 'l'.
+// Contains returns true if the element 'e' belongs to the list.
 // Time complexity: O(1).
-func (l *LinkedList) Contains(e *Element) bool {
+func (l *List) Contains(e *Element) bool {
 	return e != nil && e.parent == l
 }
 
-// Do gets the front value and performs all the procedures, then repeats this with the rest of the values.
-// 'l' retains its original state.
-// Time complexity: O(n), where n is the current length of 'l'.
-func (l *LinkedList) Do(procedures ...func(v interface{})) {
+// Do gets the front value and performs all the procedures, then repeats it with the rest of the values.
+// The list retains its original state.
+// Time complexity: O(n*p), where n is the current length of the list and p is the number of procedures.
+func (l *List) Do(procedures ...func(v interface{})) {
 	for e := l.front; e != nil; e = e.next {
 		for _, procedure := range procedures {
 			procedure(e.value)
@@ -114,9 +122,9 @@ func (l *LinkedList) Do(procedures ...func(v interface{})) {
 	}
 }
 
-// Equals compares list 'l' with list 'other' and returns true if they are equals.
-// Time complexity: O(n), where n is the current length of 'l' as well as 'other'.
-func (l *LinkedList) Equals(other *LinkedList) bool {
+// Equals compares this list with the 'other' list and returns true if they are equal.
+// Time complexity: O(n), where n is the current length of the list.
+func (l *List) Equals(other *List) bool {
 	if l.len != other.len {
 		return false
 	}
@@ -128,11 +136,11 @@ func (l *LinkedList) Equals(other *LinkedList) bool {
 	return true
 }
 
-// EqualsByComparator compares list 'l' with list 'other' and returns true if they are equals.
-// The comparison between values is defined by parameter 'equals'.
-// 'equals' must return true if 'v1' equals 'v2'.
-// Time complexity: O(n), where n is the current length of 'l' as well as 'other'.
-func (l *LinkedList) EqualsByComparator(other *LinkedList, equals func(v1, v2 interface{}) bool) bool {
+// EqualsByComparator compares this list with the 'other' list and returns true if they are equal.
+// The comparison between values is defined by the parameter 'equals'.
+// The function 'equals' must return true if 'v1' equals 'v2'.
+// Time complexity: O(n), where n is the current length of the list.
+func (l *List) EqualsByComparator(other *List, equals func(v1, v2 interface{}) bool) bool {
 	if l.len != other.len {
 		return false
 	}
@@ -145,9 +153,9 @@ func (l *LinkedList) EqualsByComparator(other *LinkedList, equals func(v1, v2 in
 }
 
 // Front returns the front element.
-// If the list is empty returns nil.
+// If the list is empty, then returns nil.
 // Time complexity: O(1).
-func (l *LinkedList) Front() *Element {
+func (l *List) Front() *Element {
 	if l.IsEmpty() {
 		return nil
 	}
@@ -155,9 +163,9 @@ func (l *LinkedList) Front() *Element {
 }
 
 // Get returns the 'index' (zero based) position element.
-// If 'index' is out of bounds returns nil.
-// Time complexity: O(n/2), where n is the current length of 'l'.
-func (l *LinkedList) Get(index int) *Element {
+// If 'index' is out of bounds, then returns nil.
+// Time complexity: O(n/2), where n is the current length of the list.
+func (l *List) Get(index int) *Element {
 	if index < 0 || index > l.len-1 {
 		return nil
 	}
@@ -178,19 +186,19 @@ func (l *LinkedList) Get(index int) *Element {
 
 // IsEmpty returns true if the list has no elements.
 // Time complexity: O(1).
-func (l *LinkedList) IsEmpty() bool {
+func (l *List) IsEmpty() bool {
 	return l.len == 0
 }
 
-// Len returns the current length.
+// Len returns the current length of the list.
 // Time complexity: O(1).
-func (l *LinkedList) Len() int {
+func (l *List) Len() int {
 	return l.len
 }
 
-// MoveAfter moves the element 'e' after 'b'.
+// MoveAfter moves the element 'e' after 'mark'.
 // Time complexity: O(1).
-func (l *LinkedList) MoveAfter(e, mark *Element) bool {
+func (l *List) MoveAfter(e, mark *Element) bool {
 	if !l.Contains(e) || !l.Contains(mark) {
 		return false
 	}
@@ -209,9 +217,9 @@ func (l *LinkedList) MoveAfter(e, mark *Element) bool {
 	return true
 }
 
-// MoveBefore moves the element 'e' before 'b'.
+// MoveBefore moves the element 'e' before 'mark'.
 // Time complexity: O(1).
-func (l *LinkedList) MoveBefore(e, mark *Element) bool {
+func (l *List) MoveBefore(e, mark *Element) bool {
 	if !l.Contains(e) || !l.Contains(mark) {
 		return false
 	}
@@ -232,19 +240,19 @@ func (l *LinkedList) MoveBefore(e, mark *Element) bool {
 
 // MoveToBack moves the element 'e' to back.
 // Time complexity: O(1).
-func (l *LinkedList) MoveToBack(e *Element) bool {
+func (l *List) MoveToBack(e *Element) bool {
 	return l.MoveAfter(e, l.back)
 }
 
 // MoveToFront moves the element 'e' to front.
 // Time complexity: O(1).
-func (l *LinkedList) MoveToFront(e *Element) bool {
+func (l *List) MoveToFront(e *Element) bool {
 	return l.MoveAfter(e, l.front)
 }
 
 // PushAfter inserts the value 'v' after the element 'mark'.
 // Time complexity: O(1).
-func (l *LinkedList) PushAfter(v interface{}, mark *Element) *Element {
+func (l *List) PushAfter(v interface{}, mark *Element) *Element {
 	if !l.Contains(mark) {
 		return nil
 	}
@@ -259,9 +267,9 @@ func (l *LinkedList) PushAfter(v interface{}, mark *Element) *Element {
 	return e
 }
 
-// PushBack inserts the value 'v' in the back.
+// PushBack inserts the value 'v' at the back of the list.
 // Time complexity: O(1).
-func (l *LinkedList) PushBack(v interface{}) {
+func (l *List) PushBack(v interface{}) {
 	e := &Element{value: v, next: nil, prev: l.back, parent: l}
 	if l.IsEmpty() {
 		l.front = e
@@ -272,9 +280,9 @@ func (l *LinkedList) PushBack(v interface{}) {
 	l.len++
 }
 
-// PushBackList inserts the list 'other' in the back of 'l'.
-// Time complexity: O(n), where n is the current length of 'other'.
-func (l *LinkedList) PushBackList(other *LinkedList) {
+// PushBackList inserts the list 'other' at the back of this list.
+// Time complexity: O(n), where n is the current length of the list 'other'.
+func (l *List) PushBackList(other *List) {
 	if other == nil {
 		return
 	}
@@ -285,7 +293,7 @@ func (l *LinkedList) PushBackList(other *LinkedList) {
 
 // PushBefore inserts the value 'v' before the element 'mark'.
 // Time complexity: O(1).
-func (l *LinkedList) PushBefore(v interface{}, mark *Element) *Element {
+func (l *List) PushBefore(v interface{}, mark *Element) *Element {
 	if !l.Contains(mark) {
 		return nil
 	}
@@ -300,9 +308,9 @@ func (l *LinkedList) PushBefore(v interface{}, mark *Element) *Element {
 	return e
 }
 
-// PushFront inserts the value 'v' in the front.
+// PushFront inserts the value 'v' at the front of the list.
 // Time complexity: O(1).
-func (l *LinkedList) PushFront(v interface{}) {
+func (l *List) PushFront(v interface{}) {
 	e := &Element{value: v, next: l.front, prev: nil, parent: l}
 	if l.IsEmpty() {
 		l.back = e
@@ -313,9 +321,9 @@ func (l *LinkedList) PushFront(v interface{}) {
 	l.len++
 }
 
-// PushFrontList inserts the list 'other' in the front of 'l'.
-// Time complexity: O(n), where n is the current length of 'other'.
-func (l *LinkedList) PushFrontList(other *LinkedList) {
+// PushFrontList inserts the list 'other' in the front of this list.
+// Time complexity: O(n), where n is the current length of the list 'other'.
+func (l *List) PushFrontList(other *List) {
 	if other == nil {
 		return
 	}
@@ -325,11 +333,11 @@ func (l *LinkedList) PushFrontList(other *LinkedList) {
 }
 
 // quickSort sorts the list using the Quick Sort algorithm.
-func (l *LinkedList) quickSort(compare func(v1, v2 interface{}) int) {
+func (l *List) quickSort(compare func(v1, v2 interface{}) int) {
 	quickSortRecursive(l.front, l.back, compare)
 }
 
-// quickSortRecursive is an auxiliary recursive function of the LinkedList quickSort method.
+// quickSortRecursive is an auxiliary recursive function of the List quickSort method.
 func quickSortRecursive(front, back *Element, compare func(v1, v2 interface{}) int) {
 	if front != nil && back != nil && front != back.next {
 		pivot := front.prev
@@ -355,8 +363,8 @@ func quickSortRecursive(front, back *Element, compare func(v1, v2 interface{}) i
 }
 
 // Remove removes the first match of the value 'v' in the list.
-// Time complexity: O(n), where n is the current length of 'l'.
-func (l *LinkedList) Remove(v interface{}) bool {
+// Time complexity: O(n), where n is the current length of the list.
+func (l *List) Remove(v interface{}) bool {
 	for e := l.front; e != nil; e = e.next {
 		if v == e.value {
 			l.unlink(e)
@@ -368,15 +376,15 @@ func (l *LinkedList) Remove(v interface{}) bool {
 	return false
 }
 
-// RemoveAll sets the properties of this list to its zero values.
+// RemoveAll sets the properties of the list to its zero values.
 // Time complexity: O(1).
-func (l *LinkedList) RemoveAll() {
+func (l *List) RemoveAll() {
 	l.front, l.back, l.len = nil, nil, 0
 }
 
 // RemoveElement removes the element 'e' from the list.
 // Time complexity: O(1).
-func (l *LinkedList) RemoveElement(e *Element) (v interface{}, ok bool) {
+func (l *List) RemoveElement(e *Element) (v interface{}, ok bool) {
 	if !l.Contains(e) {
 		return nil, false
 	}
@@ -387,10 +395,10 @@ func (l *LinkedList) RemoveElement(e *Element) (v interface{}, ok bool) {
 	return v, true
 }
 
-// RemoveFrom removes the element "start", "end" and all elements between them and returns the number of removals.
-// If the element 'end' is before 'start' then 'start' and all the next elements will be removed.
+// RemoveFrom removes the element 'start', 'end' and all elements between them, and then returns the number of removals.
+// If the element 'end' is before 'start', then 'start' and all the next elements will be removed.
 // Time complexity: O(n), where n is the length between 'start' and 'end'.
-func (l *LinkedList) RemoveFrom(start, end *Element) int {
+func (l *List) RemoveFrom(start, end *Element) int {
 	if !l.Contains(start) || !l.Contains(end) {
 		return 0
 	}
@@ -408,10 +416,10 @@ func (l *LinkedList) RemoveFrom(start, end *Element) int {
 	return count
 }
 
-// RemoveIf removes all values that meet the condition defined by parameter 'condition' and
-//returns the number of removals.
-// Time complexity: O(n), where n is the current length of 'l'.
-func (l *LinkedList) RemoveIf(condition func(v interface{}) bool) int {
+// RemoveIf removes all values that meet the condition defined by the parameter 'condition' and returns the number of
+//removals.
+// Time complexity: O(n), where n is the current length of the list.
+func (l *List) RemoveIf(condition func(v interface{}) bool) int {
 	count := 0
 	for e := l.front; e != nil; {
 		if condition(e.value) {
@@ -428,11 +436,10 @@ func (l *LinkedList) RemoveIf(condition func(v interface{}) bool) int {
 	return count
 }
 
-// Search returns the index (based on zero) of the first match of the value 'v' and
-//the element containing it.
-// If the value 'v' does not belong to the list, return -1 and nil.
-// Time complexity: O(n), where n is the current length of 'l'.
-func (l *LinkedList) Search(v interface{}) (index int, e *Element) {
+// Search returns the index (zero based) of the first match of the value 'v' and the element containing it.
+// If the value 'v' does not belong to the list, then returns -1 and nil.
+// Time complexity: O(n), where n is the current length of the list.
+func (l *List) Search(v interface{}) (index int, e *Element) {
 	for e, i := l.front, 0; e != nil; e, i = e.next, i+1 {
 		if e.value == v {
 			return i, e
@@ -441,13 +448,12 @@ func (l *LinkedList) Search(v interface{}) (index int, e *Element) {
 	return -1, nil
 }
 
-// SearchByComparator returns the index (based on zero) of the first match of the value 'v' and
-//the element containing it.
-// If the value 'v' does not belong to the list, return -1 and nil.
-// The comparison between values is defined by parameter 'equals'.
-// 'equals' must return true if 'v1' equals 'v2'.
-// Time complexity: O(n), where n is the current length of 'l'.
-func (l *LinkedList) SearchByComparator(v interface{}, equals func(v1, v2 interface{}) bool) (index int, e *Element) {
+// SearchByComparator returns the index (zero based) of the first match of the value 'v' and the element containing it.
+// If the value 'v' does not belong to the list, then returns -1 and nil.
+// The comparison between values is defined by the parameter 'equals'.
+// The function 'equals' must return true if 'v1' equals 'v2'.
+// Time complexity: O(n), where n is the current length of the list.
+func (l *List) SearchByComparator(v interface{}, equals func(v1, v2 interface{}) bool) (index int, e *Element) {
 	for e, i := l.front, 0; e != nil; e, i = e.next, i+1 {
 		if equals(e.value, v) {
 			return i, e
@@ -457,7 +463,7 @@ func (l *LinkedList) SearchByComparator(v interface{}, equals func(v1, v2 interf
 }
 
 // selectionSort sorts the list using the Selection Sort algorithm.
-func (l *LinkedList) selectionSort(compare func(v1, v2 interface{}) int) {
+func (l *List) selectionSort(compare func(v1, v2 interface{}) int) {
 	for i := l.front; i != l.back; i = i.next {
 		minor := i
 		for j := minor.next; j != nil; j = j.next {
@@ -470,9 +476,9 @@ func (l *LinkedList) selectionSort(compare func(v1, v2 interface{}) int) {
 }
 
 // Slice returns a new slice with the values stored in the list keeping its order.
-// 'l' retains its original state.
-// Time complexity: O(n), where n is the current length of 'l'.
-func (l *LinkedList) Slice() []interface{} {
+// The list retains its original state.
+// Time complexity: O(n), where n is the current length of the list.
+func (l *List) Slice() []interface{} {
 	values := make([]interface{}, 0, l.len)
 	for e := l.front; e != nil; e = e.next {
 		values = append(values, e.value)
@@ -481,11 +487,12 @@ func (l *LinkedList) Slice() []interface{} {
 }
 
 // Sort sorts the list.
-// The comparison to order the values is defined by parameter 'compare'.
-// 'compare' must return a negative int, zero, or a positive int as 'v1' is less than, equal to, or greater than 'v2'.
-// Time complexity: if n > 10 then: Quick Sort's time complexity, else: Selection Sort's time complexity,
-//where n is the current length of 'l'.
-func (l *LinkedList) Sort(compare func(v1, v2 interface{}) int) {
+// The comparison to order the values is defined by the parameter 'compare'.
+// The function 'compare' must return a negative int, zero, or a positive int as 'v1' is less than, equal to, or
+//greater than 'v2'.
+// Time complexity (n <= 10): O(n^2), where n is the current length of the list.
+// Time complexity (n > 10): θ(n*log(n)) and O(n^2), where n is the current length of the list.
+func (l *List) Sort(compare func(v1, v2 interface{}) int) {
 	if l.len > 1 {
 		if l.len > 10 {
 			l.quickSort(compare)
@@ -496,9 +503,9 @@ func (l *LinkedList) Sort(compare func(v1, v2 interface{}) int) {
 }
 
 // String returns a representation of the list as a string.
-// LinkedList implements the fmt.Stringer interface.
-// Time complexity: O(n), where n is the current length of 'l'.
-func (l *LinkedList) String() string {
+// List implements the fmt.Stringer interface.
+// Time complexity: O(n), where n is the current length of the list.
+func (l *List) String() string {
 	if l.IsEmpty() {
 		return "[]"
 	}
@@ -512,7 +519,7 @@ func (l *LinkedList) String() string {
 
 // Swap swaps the values between elements 'a' and 'b'.
 // Time complexity: O(1).
-func (l *LinkedList) Swap(a, b *Element) bool {
+func (l *List) Swap(a, b *Element) bool {
 	if !l.Contains(a) || !l.Contains(b) {
 		return false
 	}
@@ -521,7 +528,8 @@ func (l *LinkedList) Swap(a, b *Element) bool {
 }
 
 // unlink unlinks an element in the list.
-func (l *LinkedList) unlink(e *Element) {
+// Time complexity: O(1).
+func (l *List) unlink(e *Element) {
 	if e.prev == nil {
 		if e.next == nil {
 			l.front, l.back = nil, nil

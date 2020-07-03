@@ -57,7 +57,7 @@ func TestNewBySlice(t *testing.T) {
 	}
 }
 
-func TestQueue_Clone(t *testing.T) {
+func TestStack_Clone(t *testing.T) {
 	tests := []struct {
 		name   string
 		s      *Stack
@@ -76,7 +76,7 @@ func TestQueue_Clone(t *testing.T) {
 		})
 	}
 }
-func TestQueue_Do(t *testing.T) {
+func TestStack_Do(t *testing.T) {
 	strResult := "P1:5 P2:5 P1:3 P2:3 P1:1 P2:1 P1:0 P2:0 "
 	str := ""
 	procedure1 := func(v interface{}) {
@@ -107,7 +107,7 @@ func TestQueue_Do(t *testing.T) {
 		})
 	}
 }
-func TestQueue_Equals(t *testing.T) {
+func TestStack_Equals(t *testing.T) {
 	tests := []struct {
 		name string
 		s    *Stack
@@ -129,7 +129,7 @@ func TestQueue_Equals(t *testing.T) {
 		})
 	}
 }
-func TestQueue_EqualsByComparator(t *testing.T) {
+func TestStack_EqualsByComparator(t *testing.T) {
 	tests := []struct {
 		name string
 		s    *Stack
@@ -152,7 +152,7 @@ func TestQueue_EqualsByComparator(t *testing.T) {
 		})
 	}
 }
-func TestQueue_Get(t *testing.T) {
+func TestStack_Get(t *testing.T) {
 	tests := []struct {
 		name      string
 		s         *Stack
@@ -175,7 +175,7 @@ func TestQueue_Get(t *testing.T) {
 		})
 	}
 }
-func TestQueue_GetIf(t *testing.T) {
+func TestStack_GetIf(t *testing.T) {
 	condition := func(v interface{}) bool {
 		intV := v.(int)
 		return intV > 0
@@ -206,7 +206,7 @@ func TestQueue_GetIf(t *testing.T) {
 		})
 	}
 }
-func TestQueue_Push(t *testing.T) {
+func TestStack_Push(t *testing.T) {
 	tests := []struct {
 		name      string
 		s         *Stack
@@ -226,7 +226,7 @@ func TestQueue_Push(t *testing.T) {
 		})
 	}
 }
-func TestQueue_Search(t *testing.T) {
+func TestStack_Search(t *testing.T) {
 	tests := []struct {
 		name string
 		s    *Stack
@@ -246,7 +246,7 @@ func TestQueue_Search(t *testing.T) {
 		})
 	}
 }
-func TestQueue_SearchByComparator(t *testing.T) {
+func TestStack_SearchByComparator(t *testing.T) {
 	tests := []struct {
 		name string
 		s    *Stack
@@ -266,7 +266,7 @@ func TestQueue_SearchByComparator(t *testing.T) {
 		})
 	}
 }
-func TestQueue_Slice(t *testing.T) {
+func TestStack_Slice(t *testing.T) {
 	tests := []struct {
 		name string
 		s    *Stack
