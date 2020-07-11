@@ -551,23 +551,27 @@ func TestIterator_HasNext(t *testing.T) {
 		out      bool
 		hm       *HashMap
 	}{
-		{"empty", 0, false,
+		{"empty/false", 0, false,
 			New(DefaultCapacity, DefaultLoadFactor)},
-		{"!empty/differentBucket", 1, true,
+		{"!empty/false", 2, false,
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0, key{16}: 16}, DefaultCapacity, DefaultLoadFactor)},
+		{"!empty/true/differentBucket", 1, true,
 			NewByMap(map[coll.Hashable]interface{}{
 				key{0}: 0, key{1}: 1}, DefaultCapacity, DefaultLoadFactor)},
-		{"!empty/sameBucket", 1, true,
+		{"!empty/true/sameBucket", 1, true,
 			NewByMap(map[coll.Hashable]interface{}{
 				key{0}: 0, key{16}: 16}, DefaultCapacity, DefaultLoadFactor)},
-		{"!empty/false", 2, true,
+		{"!empty/true/first", 0, true,
 			NewByMap(map[coll.Hashable]interface{}{
-				key{0}: 0, key{16}: 16}, DefaultCapacity, DefaultLoadFactor)},
+				key{0}: 0}, DefaultCapacity, DefaultLoadFactor)},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			iterator := test.hm.Iterator()
 			for i := 0; i < test.loopNext; i++ {
+				iterator.HasNext()
 				_, _ = iterator.Next()
 			}
 			if got, expected := iterator.HasNext(), test.out; got != expected {
@@ -584,27 +588,27 @@ func TestIterator_Next(t *testing.T) {
 		out      interface{}
 		hm       *HashMap
 	}{
-		{"empty", 0, coll.ErrorIteratorHasNext, nil,
+		{"empty/error", 0, coll.ErrorIteratorHasNext, nil,
 			New(DefaultCapacity, DefaultLoadFactor)},
-		{"!empty/differentBucket", 1, "", key{4},
-			NewByMap(map[coll.Hashable]interface{}{
-				key{1}: 1, key{4}: 4}, DefaultCapacity, DefaultLoadFactor)},
-		{"!empty/sameBucket", 1, "", key{0},
-			New(DefaultCapacity, DefaultLoadFactor)},
-		{"!empty/first", 0, "", key{0},
-			NewByMap(map[coll.Hashable]interface{}{
-				key{0}: 0}, DefaultCapacity, DefaultLoadFactor)},
-		{"!empty/false", 2, coll.ErrorIteratorHasNext, nil,
+		{"!empty/error", 2, coll.ErrorIteratorHasNext, nil,
 			NewByMap(map[coll.Hashable]interface{}{
 				key{0}: 0, key{16}: 16}, DefaultCapacity, DefaultLoadFactor)},
-		{"!empty/withOutHasNext", 1, coll.ErrorIteratorNext, nil,
+		{"!empty/error/withOutHasNext", 1, coll.ErrorIteratorNext, nil,
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0}, DefaultCapacity, DefaultLoadFactor)},
+		{"!empty/ok/differentBucket", 1, "", key{4},
+			NewByMap(map[coll.Hashable]interface{}{
+				key{1}: 1, key{4}: 4}, DefaultCapacity, DefaultLoadFactor)},
+		{"!empty/ok/sameBucket", 1, "", key{0},
+			New(DefaultCapacity, DefaultLoadFactor)},
+		{"!empty/ok/first", 0, "", key{0},
 			NewByMap(map[coll.Hashable]interface{}{
 				key{0}: 0}, DefaultCapacity, DefaultLoadFactor)},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			if test.name == "!empty/sameBucket" {
+			if test.name == "!empty/ok/sameBucket" {
 				test.hm.Push(key{0}, 0)
 				test.hm.Push(key{16}, 16)
 			}
@@ -615,7 +619,7 @@ func TestIterator_Next(t *testing.T) {
 				_, _ = iterator.Next()
 			}
 
-			if test.name != "!empty/withOutHasNext" {
+			if test.name != "!empty/error/withOutHasNext" {
 				iterator.HasNext()
 			}
 			got, err := iterator.Next()
@@ -648,43 +652,43 @@ func TestIterator_Remove(t *testing.T) {
 		hm       *HashMap
 		pairs    [][]pair
 	}{
-		{"empty", 0, coll.ErrorIteratorHasNext,
+		{"empty/error", 0, coll.ErrorIteratorHasNext,
 			New(DefaultCapacity, DefaultLoadFactor),
 			buckets(DefaultCapacity, []pair{})},
-		{"!empty/differentBucket", 1, "",
+		{"!empty/error", 2, coll.ErrorIteratorHasNext,
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0, key{1}: 1}, DefaultCapacity, DefaultLoadFactor),
+			buckets(DefaultCapacity, []pair{
+				{0, key{0}, 0}, {1, key{1}, 1}})},
+		{"!empty/error/withOutNext", 0, coll.ErrorIteratorRemove,
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0}, DefaultCapacity, DefaultLoadFactor),
+			buckets(DefaultCapacity, []pair{
+				{0, key{0}, 0}})},
+		{"!empty/error/doubleRemove", 0, coll.ErrorIteratorRemove,
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0, key{1}: 1}, DefaultCapacity, DefaultLoadFactor),
+			buckets(DefaultCapacity, []pair{
+				{1, key{1}, 1}})},
+		{"!empty/ok/differentBucket", 1, "",
 			NewByMap(map[coll.Hashable]interface{}{
 				key{0}: 0, key{1}: 1},
 				DefaultCapacity, DefaultLoadFactor),
 			buckets(DefaultCapacity, []pair{
 				{0, key{0}, 0}})},
-		{"!empty/sameBucket", 1, "",
+		{"!empty/ok/sameBucket", 1, "",
 			New(DefaultCapacity, DefaultLoadFactor),
 			buckets(DefaultCapacity, []pair{
 				{0, key{0}, 0}})},
-		{"!empty/first", 0, "",
+		{"!empty/ok/first", 0, "",
 			NewByMap(map[coll.Hashable]interface{}{
 				key{0}: 0}, DefaultCapacity, DefaultLoadFactor),
 			buckets(DefaultCapacity, []pair{})},
-		{"!empty/false", 2, coll.ErrorIteratorHasNext,
-			NewByMap(map[coll.Hashable]interface{}{
-				key{0}: 0, key{1}: 1}, DefaultCapacity, DefaultLoadFactor),
-			buckets(DefaultCapacity, []pair{
-				{0, key{0}, 0}, {1, key{1}, 1}})},
-		{"!empty/withOutNext", 0, coll.ErrorIteratorRemove,
-			NewByMap(map[coll.Hashable]interface{}{
-				key{0}: 0}, DefaultCapacity, DefaultLoadFactor),
-			buckets(DefaultCapacity, []pair{
-				{0, key{0}, 0}})},
-		{"!empty/doubleRemove", 0, coll.ErrorIteratorRemove,
-			NewByMap(map[coll.Hashable]interface{}{
-				key{0}: 0, key{1}: 1}, DefaultCapacity, DefaultLoadFactor),
-			buckets(DefaultCapacity, []pair{
-				{1, key{1}, 1}})},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			if test.name == "!empty/sameBucket" {
+			if test.name == "!empty/ok/sameBucket" {
 				test.hm.Push(key{16}, 16)
 				test.hm.Push(key{0}, 0)
 			}
@@ -696,10 +700,10 @@ func TestIterator_Remove(t *testing.T) {
 			}
 
 			iterator.HasNext()
-			if test.name != "!empty/withOutNext" {
+			if test.name != "!empty/error/withOutNext" {
 				_, _ = iterator.Next()
 			}
-			if test.name == "!empty/doubleRemove" {
+			if test.name == "!empty/error/doubleRemove" {
 				_ = iterator.Remove()
 			}
 			err := iterator.Remove()
