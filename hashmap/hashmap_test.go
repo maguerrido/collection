@@ -51,13 +51,6 @@ func checkBuckets(buckets []*node, pairs [][]pair) bool {
 	}
 	return true
 }
-func hmByMap(values map[coll.Hashable]interface{}) *HashMap {
-	hm := New(DefaultCapacity, DefaultLoadFactor)
-	for k, v := range values {
-		hm.Push(k, v)
-	}
-	return hm
-}
 
 func TestNew(t *testing.T) {
 	tests := []struct {
@@ -306,22 +299,22 @@ func TestHashMap_Push(t *testing.T) {
 			New(DefaultCapacity, DefaultLoadFactor),
 			buckets(DefaultCapacity, []pair{})},
 		{"!empty/different_bucket", key{0}, 0, true,
-			hmByMap(map[coll.Hashable]interface{}{
-				key{1}: 1}),
+			NewByMap(map[coll.Hashable]interface{}{
+				key{1}: 1}, DefaultCapacity, DefaultLoadFactor),
 			buckets(DefaultCapacity, []pair{
 				{1, key{1}, 1},
 				{0, key{0}, 0},
 			})},
 		{"!empty/same_bucket", key{0}, 0, true,
-			hmByMap(map[coll.Hashable]interface{}{
-				key{16}: 16}),
+			NewByMap(map[coll.Hashable]interface{}{
+				key{16}: 16}, DefaultCapacity, DefaultLoadFactor),
 			buckets(DefaultCapacity, []pair{
 				{0, key{0}, 0},
 				{0, key{16}, 16},
 			})},
 		{"!empty/update", key{0}, 0, true,
-			hmByMap(map[coll.Hashable]interface{}{
-				key{0}: 16}), // 16 should be updated by 0
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 16}, DefaultCapacity, DefaultLoadFactor), // 16 should be updated by 0
 			buckets(DefaultCapacity, []pair{
 				{0, key{0}, 0},
 			})},
@@ -510,6 +503,223 @@ func TestHashMap_SearchByComparator(t *testing.T) {
 				return ok1 && ok2 && i1 == i2
 			}), test.out; got != expected {
 				tt.Errorf("Got: %v, Expected: %v", got, expected)
+			}
+		})
+	}
+}
+
+func TestIterator_ForEach(t *testing.T) {
+	action := func(v *interface{}) {
+		intV, _ := (*v).(int)
+		*v = intV * 2
+	}
+	tests := []struct {
+		name string
+		in   func(v *interface{})
+		hm   *HashMap
+		out  [][]pair
+	}{
+		{"empty", nil,
+			New(DefaultCapacity, DefaultLoadFactor),
+			buckets(DefaultCapacity, []pair{})},
+		{"!empty/emptyParams", nil,
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0, key{1}: 1, key{2}: 2, key{3}: 3}, DefaultCapacity, DefaultLoadFactor),
+			buckets(DefaultCapacity, []pair{
+				{0, key{0}, 0}, {1, key{1}, 1}, {2, key{2}, 2}, {3, key{3}, 3}})},
+		{"!empty", action,
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0, key{1}: 1, key{2}: 2, key{3}: 3}, DefaultCapacity, DefaultLoadFactor),
+			buckets(DefaultCapacity, []pair{
+				{0, key{0}, 0}, {1, key{1}, 2}, {2, key{2}, 4}, {3, key{3}, 6}})},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			iterator := test.hm.Iterator()
+			iterator.ForEach(test.in)
+			if !checkBuckets(test.hm.buckets, test.out) {
+				tt.Errorf("checkBuckets: FAIL")
+			}
+		})
+	}
+}
+func TestIterator_HasNext(t *testing.T) {
+	tests := []struct {
+		name     string
+		loopNext int
+		out      bool
+		hm       *HashMap
+	}{
+		{"empty", 0, false,
+			New(DefaultCapacity, DefaultLoadFactor)},
+		{"!empty/differentBucket", 1, true,
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0, key{1}: 1}, DefaultCapacity, DefaultLoadFactor)},
+		{"!empty/sameBucket", 1, true,
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0, key{16}: 16}, DefaultCapacity, DefaultLoadFactor)},
+		{"!empty/false", 2, true,
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0, key{16}: 16}, DefaultCapacity, DefaultLoadFactor)},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			iterator := test.hm.Iterator()
+			for i := 0; i < test.loopNext; i++ {
+				_, _ = iterator.Next()
+			}
+			if got, expected := iterator.HasNext(), test.out; got != expected {
+				tt.Errorf("Got: %v, Expected: %v", got, expected)
+			}
+		})
+	}
+}
+func TestIterator_Next(t *testing.T) {
+	tests := []struct {
+		name     string
+		loopNext int
+		errStr   string
+		out      interface{}
+		hm       *HashMap
+	}{
+		{"empty", 0, coll.ErrorIteratorHasNext, nil,
+			New(DefaultCapacity, DefaultLoadFactor)},
+		{"!empty/differentBucket", 1, "", key{4},
+			NewByMap(map[coll.Hashable]interface{}{
+				key{1}: 1, key{4}: 4}, DefaultCapacity, DefaultLoadFactor)},
+		{"!empty/sameBucket", 1, "", key{0},
+			New(DefaultCapacity, DefaultLoadFactor)},
+		{"!empty/first", 0, "", key{0},
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0}, DefaultCapacity, DefaultLoadFactor)},
+		{"!empty/false", 2, coll.ErrorIteratorHasNext, nil,
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0, key{16}: 16}, DefaultCapacity, DefaultLoadFactor)},
+		{"!empty/withOutHasNext", 1, coll.ErrorIteratorNext, nil,
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0}, DefaultCapacity, DefaultLoadFactor)},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			if test.name == "!empty/sameBucket" {
+				test.hm.Push(key{0}, 0)
+				test.hm.Push(key{16}, 16)
+			}
+
+			iterator := test.hm.Iterator()
+			for i := 0; i < test.loopNext; i++ {
+				iterator.HasNext()
+				_, _ = iterator.Next()
+			}
+
+			if test.name != "!empty/withOutHasNext" {
+				iterator.HasNext()
+			}
+			got, err := iterator.Next()
+
+			if expected := test.out; got != expected {
+				tt.Errorf("Got: %v, Expected: %v", got, expected)
+			}
+
+			if test.errStr == "" {
+				if err != nil {
+					tt.Errorf("error detected: %v", err.Error())
+				}
+			} else {
+				if err == nil {
+					tt.Errorf("error not detected")
+				} else {
+					if err.Error() != test.errStr {
+						tt.Errorf("wrong error")
+					}
+				}
+			}
+		})
+	}
+}
+func TestIterator_Remove(t *testing.T) {
+	tests := []struct {
+		name     string
+		loopNext int
+		errStr   string
+		hm       *HashMap
+		pairs    [][]pair
+	}{
+		{"empty", 0, coll.ErrorIteratorHasNext,
+			New(DefaultCapacity, DefaultLoadFactor),
+			buckets(DefaultCapacity, []pair{})},
+		{"!empty/differentBucket", 1, "",
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0, key{1}: 1},
+				DefaultCapacity, DefaultLoadFactor),
+			buckets(DefaultCapacity, []pair{
+				{0, key{0}, 0}})},
+		{"!empty/sameBucket", 1, "",
+			New(DefaultCapacity, DefaultLoadFactor),
+			buckets(DefaultCapacity, []pair{
+				{0, key{0}, 0}})},
+		{"!empty/first", 0, "",
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0}, DefaultCapacity, DefaultLoadFactor),
+			buckets(DefaultCapacity, []pair{})},
+		{"!empty/false", 2, coll.ErrorIteratorHasNext,
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0, key{1}: 1}, DefaultCapacity, DefaultLoadFactor),
+			buckets(DefaultCapacity, []pair{
+				{0, key{0}, 0}, {1, key{1}, 1}})},
+		{"!empty/withOutNext", 0, coll.ErrorIteratorRemove,
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0}, DefaultCapacity, DefaultLoadFactor),
+			buckets(DefaultCapacity, []pair{
+				{0, key{0}, 0}})},
+		{"!empty/doubleRemove", 0, coll.ErrorIteratorRemove,
+			NewByMap(map[coll.Hashable]interface{}{
+				key{0}: 0, key{1}: 1}, DefaultCapacity, DefaultLoadFactor),
+			buckets(DefaultCapacity, []pair{
+				{1, key{1}, 1}})},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			if test.name == "!empty/sameBucket" {
+				test.hm.Push(key{16}, 16)
+				test.hm.Push(key{0}, 0)
+			}
+
+			iterator := test.hm.Iterator()
+			for i := 0; i < test.loopNext; i++ {
+				iterator.HasNext()
+				_, _ = iterator.Next()
+			}
+
+			iterator.HasNext()
+			if test.name != "!empty/withOutNext" {
+				_, _ = iterator.Next()
+			}
+			if test.name == "!empty/doubleRemove" {
+				_ = iterator.Remove()
+			}
+			err := iterator.Remove()
+
+			if !checkBuckets(test.hm.buckets, test.pairs) {
+				tt.Errorf("checkBuckets: FAIL")
+			}
+
+			if test.errStr == "" {
+				if err != nil {
+					tt.Errorf("error detected: %v", err.Error())
+				}
+			} else {
+				if err == nil {
+					tt.Errorf("error not detected")
+				} else {
+					if err.Error() != test.errStr {
+						tt.Errorf("wrong error")
+					}
+				}
 			}
 		})
 	}
