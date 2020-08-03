@@ -1,9 +1,8 @@
 # Collection
 Collection is a Go library for dealing with abstract data types.
 
-:hammer: Working on [**iterators**](https://github.com/maguerrido/collection/tree/iterator)
-
 ## Historical
+* [Iterators v1.1.0](https://github.com/maguerrido/collection/releases/tag/v1.1.0)
 * [Collection v1.0.0](https://github.com/maguerrido/collection/releases/tag/v1.0.0)
 
 ## Install
