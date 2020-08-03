@@ -194,7 +194,7 @@ func (l *List) IsEmpty() bool {
 }
 
 func (l *List) Iterator() coll.Iterator {
-	return &Iterator{
+	return &iterator{
 		l:           l,
 		prev:        nil,
 		this:        nil,
@@ -564,7 +564,7 @@ func (l *List) unlink(e *Element) {
 	e.prev = nil
 }
 
-type Iterator struct {
+type iterator struct {
 	l           *List
 	prev, this  *Element
 	index       int
@@ -578,7 +578,7 @@ const (
 	iteratorCommandRemove  = 2
 )
 
-func (i *Iterator) ForEach(action func(v *interface{})) {
+func (i *iterator) ForEach(action func(v *interface{})) {
 	if action != nil {
 		for e := i.l.front; e != nil; e = e.next {
 			action(&e.value)
@@ -586,13 +586,13 @@ func (i *Iterator) ForEach(action func(v *interface{})) {
 	}
 }
 
-func (i *Iterator) HasNext() bool {
+func (i *iterator) HasNext() bool {
 	i.lastCommand = iteratorCommandHasNext
 	i.lastHasNext = i.index < i.l.len-1
 	return i.lastHasNext
 }
 
-func (i *Iterator) Next() (interface{}, error) {
+func (i *iterator) Next() (interface{}, error) {
 	if i.lastCommand != iteratorCommandHasNext {
 		return nil, fmt.Errorf(coll.ErrorIteratorNext)
 	} else if !i.lastHasNext {
@@ -611,7 +611,7 @@ func (i *Iterator) Next() (interface{}, error) {
 	return i.this.value, nil
 }
 
-func (i *Iterator) Remove() error {
+func (i *iterator) Remove() error {
 	if !i.lastHasNext {
 		return fmt.Errorf(coll.ErrorIteratorHasNext)
 	} else if i.lastCommand != iteratorCommandNext {

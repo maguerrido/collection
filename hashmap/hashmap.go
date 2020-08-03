@@ -162,7 +162,7 @@ func (hm *HashMap) IsEmpty() bool {
 }
 
 func (hm *HashMap) Iterator() coll.Iterator {
-	return &Iterator{
+	return &iterator{
 		hm:          hm,
 		prev:        nil,
 		this:        nil,
@@ -336,7 +336,7 @@ func (hm *HashMap) String() string {
 	return str[:len(str)-1] + "]"
 }
 
-type Iterator struct {
+type iterator struct {
 	hm          *HashMap
 	prev, this  *node
 	index       int
@@ -352,7 +352,7 @@ const (
 	iteratorCommandRemove  = 2
 )
 
-func (i *Iterator) ForEach(action func(v *interface{})) {
+func (i *iterator) ForEach(action func(v *interface{})) {
 	if action != nil {
 		for _, n := range i.hm.buckets {
 			for ; n != nil; n = n.next {
@@ -362,13 +362,13 @@ func (i *Iterator) ForEach(action func(v *interface{})) {
 	}
 }
 
-func (i *Iterator) HasNext() bool {
+func (i *iterator) HasNext() bool {
 	i.lastCommand = iteratorCommandHasNext
 	i.lastHasNext = i.index < i.hm.len-1
 	return i.lastHasNext
 }
 
-func (i *Iterator) Next() (interface{}, error) {
+func (i *iterator) Next() (interface{}, error) {
 	if i.lastCommand != iteratorCommandHasNext {
 		return nil, fmt.Errorf(coll.ErrorIteratorNext)
 	} else if !i.lastHasNext {
@@ -406,36 +406,25 @@ func (i *Iterator) Next() (interface{}, error) {
 	return key, nil
 }
 
-func (i *Iterator) Remove() error {
+func (i *iterator) Remove() error {
 	if !i.lastHasNext {
 		return fmt.Errorf(coll.ErrorIteratorHasNext)
 	} else if i.lastCommand != iteratorCommandNext {
 		return fmt.Errorf(coll.ErrorIteratorRemove)
 	}
-	if i.prev == nil {
+	if i.prev == nil || i.prev.next == nil {
 		next := i.hm.buckets[i.thisBucket].next
 		i.hm.buckets[i.thisBucket].clear()
 		i.hm.buckets[i.thisBucket] = next
-		i.hm.len--
-		i.thisBucket = -1
-		i.this = i.prev // nil
-		i.index--       // -1
-	} else if i.prev.next == nil {
-		next := i.hm.buckets[i.thisBucket].next
-		i.hm.buckets[i.thisBucket].clear()
-		i.hm.buckets[i.thisBucket] = next
-		i.hm.len--
 		i.thisBucket = i.prevBucket
-		i.this = i.prev
-		i.index--
 	} else {
 		next := i.this.next
 		i.this.clear()
 		i.prev.next = next
-		i.hm.len--
-		i.this = i.prev
-		i.index--
 	}
+	i.hm.len--
+	i.this = i.prev
+	i.index--
 	i.lastCommand = iteratorCommandRemove
 	return nil
 }
