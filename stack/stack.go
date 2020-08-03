@@ -4,7 +4,10 @@
 // Package stack implements a singly-linked list with stack behaviors.
 package stack
 
-import "fmt"
+import (
+	"fmt"
+	coll "github.com/maguerrido/collection"
+)
 
 // node of a Stack.
 type node struct {
@@ -141,6 +144,17 @@ func (s *Stack) IsEmpty() bool {
 	return s.len == 0
 }
 
+func (s *Stack) Iterator() coll.Iterator {
+	return &iterator{
+		s:           s,
+		prev:        nil,
+		this:        nil,
+		index:       -1,
+		lastCommand: -1,
+		lastHasNext: false,
+	}
+}
+
 // Len returns the current length of the stack.
 // Time complexity: O(1).
 func (s *Stack) Len() int {
@@ -169,6 +183,16 @@ func (s *Stack) Push(v interface{}) {
 // Time complexity: O(1).
 func (s *Stack) RemoveAll() {
 	s.top, s.len = nil, 0
+}
+
+func (s *Stack) removeNode(prev, n *node) {
+	if s.top == n {
+		s.top = n.next
+	} else {
+		prev.next = n.next
+	}
+	n.clear()
+	s.len--
 }
 
 // Search returns the index (zero based with top equal to current length - 1) of the first match of the value 'v'.
@@ -222,4 +246,66 @@ func (s *Stack) String() string {
 		str += fmt.Sprintf("%v ", n.value)
 	}
 	return str + fmt.Sprintf("%v]", n.value)
+}
+
+type iterator struct {
+	s           *Stack
+	prev, this  *node
+	index       int
+	lastCommand int
+	lastHasNext bool
+}
+
+const (
+	iteratorCommandHasNext = 0
+	iteratorCommandNext    = 1
+	iteratorCommandRemove  = 2
+)
+
+func (i *iterator) ForEach(action func(v *interface{})) {
+	if action != nil {
+		for n := i.s.top; n != nil; n = n.next {
+			action(&n.value)
+		}
+	}
+}
+
+func (i *iterator) HasNext() bool {
+	i.lastCommand = iteratorCommandHasNext
+	i.lastHasNext = i.index < i.s.len-1
+	return i.lastHasNext
+}
+
+func (i *iterator) Next() (interface{}, error) {
+	if i.lastCommand != iteratorCommandHasNext {
+		return nil, fmt.Errorf(coll.ErrorIteratorNext)
+	} else if !i.lastHasNext {
+		return nil, fmt.Errorf(coll.ErrorIteratorHasNext)
+	}
+
+	if i.this == nil {
+		i.this = i.s.top
+	} else {
+		i.prev = i.this
+		i.this = i.this.next
+	}
+	i.index++
+	i.lastCommand = iteratorCommandNext
+
+	return i.this.value, nil
+}
+
+func (i *iterator) Remove() error {
+	if !i.lastHasNext {
+		return fmt.Errorf(coll.ErrorIteratorHasNext)
+	} else if i.lastCommand != iteratorCommandNext {
+		return fmt.Errorf(coll.ErrorIteratorRemove)
+	}
+
+	i.s.removeNode(i.prev, i.this)
+	i.this = i.prev
+	i.index--
+	i.lastCommand = iteratorCommandRemove
+
+	return nil
 }

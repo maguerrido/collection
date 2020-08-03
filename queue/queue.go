@@ -4,7 +4,10 @@
 // Package queue implements a singly-linked list with queue behaviors.
 package queue
 
-import "fmt"
+import (
+	"fmt"
+	coll "github.com/maguerrido/collection"
+)
 
 // node of a Queue.
 type node struct {
@@ -140,6 +143,17 @@ func (q *Queue) IsEmpty() bool {
 	return q.len == 0
 }
 
+func (q *Queue) Iterator() coll.Iterator {
+	return &iterator{
+		q:           q,
+		prev:        nil,
+		this:        nil,
+		index:       -1,
+		lastCommand: -1,
+		lastHasNext: false,
+	}
+}
+
 // Len returns the current length of the queue.
 // Time complexity: O(1).
 func (q *Queue) Len() int {
@@ -173,6 +187,23 @@ func (q *Queue) Push(v interface{}) {
 // Time complexity: O(1).
 func (q *Queue) RemoveAll() {
 	q.front, q.back, q.len = nil, nil, 0
+}
+
+func (q *Queue) removeNode(prev, n *node) {
+	if q.front == n {
+		if q.back == n {
+			q.front, q.back = nil, nil
+		} else {
+			q.front = n.next
+		}
+	} else if q.back == n {
+		q.back = prev
+		prev.next = nil
+	} else {
+		prev.next = n.next
+	}
+	n.clear()
+	q.len--
 }
 
 // Search returns the index (zero based) of the first match of the value 'v'.
@@ -225,4 +256,66 @@ func (q *Queue) String() string {
 		str += fmt.Sprintf("%v ", n.value)
 	}
 	return str + fmt.Sprintf("%v]", n.value)
+}
+
+type iterator struct {
+	q           *Queue
+	prev, this  *node
+	index       int
+	lastCommand int
+	lastHasNext bool
+}
+
+const (
+	iteratorCommandHasNext = 0
+	iteratorCommandNext    = 1
+	iteratorCommandRemove  = 2
+)
+
+func (i *iterator) ForEach(action func(v *interface{})) {
+	if action != nil {
+		for e := i.q.front; e != nil; e = e.next {
+			action(&e.value)
+		}
+	}
+}
+
+func (i *iterator) HasNext() bool {
+	i.lastCommand = iteratorCommandHasNext
+	i.lastHasNext = i.index < i.q.len-1
+	return i.lastHasNext
+}
+
+func (i *iterator) Next() (interface{}, error) {
+	if i.lastCommand != iteratorCommandHasNext {
+		return nil, fmt.Errorf(coll.ErrorIteratorNext)
+	} else if !i.lastHasNext {
+		return nil, fmt.Errorf(coll.ErrorIteratorHasNext)
+	}
+
+	if i.this == nil {
+		i.this = i.q.front
+	} else {
+		i.prev = i.this
+		i.this = i.this.next
+	}
+	i.index++
+	i.lastCommand = iteratorCommandNext
+
+	return i.this.value, nil
+}
+
+func (i *iterator) Remove() error {
+	if !i.lastHasNext {
+		return fmt.Errorf(coll.ErrorIteratorHasNext)
+	} else if i.lastCommand != iteratorCommandNext {
+		return fmt.Errorf(coll.ErrorIteratorRemove)
+	}
+
+	i.q.removeNode(i.prev, i.this)
+	i.this = i.prev
+	i.index--
+	i.lastCommand = iteratorCommandRemove
+
+	return nil
 }

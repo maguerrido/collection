@@ -5,6 +5,7 @@ package stack
 
 import (
 	"fmt"
+	coll "github.com/maguerrido/collection"
 	"testing"
 )
 
@@ -287,6 +288,187 @@ func TestStack_Slice(t *testing.T) {
 			}
 			if len(slice) != len(test.out) {
 				tt.Errorf("length: FAIL")
+			}
+		})
+	}
+}
+
+func TestIterator_ForEach(t *testing.T) {
+	action := func(v *interface{}) {
+		intV, _ := (*v).(int)
+		*v = intV * 2
+	}
+	tests := []struct {
+		name      string
+		in        func(v *interface{})
+		s         *Stack
+		toCompare []interface{}
+	}{
+		{"empty", action,
+			New(),
+			[]interface{}{}},
+		{"!empty/emptyParams", nil,
+			NewBySlice([]interface{}{0, 1, 2}),
+			[]interface{}{2, 1, 0}},
+		{"!empty", action,
+			NewBySlice([]interface{}{0, 1, 2}),
+			[]interface{}{4, 2, 0}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			iterator := test.s.Iterator()
+			iterator.ForEach(test.in)
+			if !checkValuesAndOrder(test.s, test.toCompare) {
+				tt.Errorf("checkValuesAndOrder: FAIL")
+			}
+		})
+	}
+}
+func TestIterator_HasNext(t *testing.T) {
+	tests := []struct {
+		name     string
+		loopNext int
+		out      bool
+		s        *Stack
+	}{
+		{"empty/false", 0, false,
+			New()},
+		{"!empty/false", 1, false,
+			NewBySlice([]interface{}{0})},
+		{"!empty/true/first", 0, true,
+			NewBySlice([]interface{}{0})},
+		{"!empty/true", 1, true,
+			NewBySlice([]interface{}{0, 1})},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			iterator := test.s.Iterator()
+			for i := 0; i < test.loopNext; i++ {
+				iterator.HasNext()
+				_, _ = iterator.Next()
+			}
+			if got, expected := iterator.HasNext(), test.out; got != expected {
+				tt.Errorf("Got: %v, Expected: %v", got, expected)
+			}
+		})
+	}
+}
+func TestIterator_Next(t *testing.T) {
+	tests := []struct {
+		name     string
+		loopNext int
+		out      interface{}
+		errStr   string
+		s        *Stack
+	}{
+		{"empty/error", 0, nil, coll.ErrorIteratorHasNext,
+			New()},
+		{"!empty/error", 1, nil, coll.ErrorIteratorHasNext,
+			NewBySlice([]interface{}{0})},
+		{"!empty/error/withOutHasNext", 0, nil, coll.ErrorIteratorNext,
+			NewBySlice([]interface{}{0})},
+		{"!empty/ok/first", 0, 0, "",
+			NewBySlice([]interface{}{0})},
+		{"!empty/ok", 1, 0, "",
+			NewBySlice([]interface{}{0, 1})},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			iterator := test.s.Iterator()
+			for i := 0; i < test.loopNext; i++ {
+				iterator.HasNext()
+				_, _ = iterator.Next()
+			}
+
+			if test.name != "!empty/error/withOutHasNext" {
+				iterator.HasNext()
+			}
+			got, err := iterator.Next()
+
+			if expected := test.out; got != expected {
+				tt.Errorf("Got: %v, Expected: %v", got, expected)
+			}
+
+			if test.errStr == "" {
+				if err != nil {
+					tt.Errorf("error detected: %v", err.Error())
+				}
+			} else {
+				if err == nil {
+					tt.Errorf("error not detected")
+				} else {
+					if err.Error() != test.errStr {
+						tt.Errorf("wrong error")
+					}
+				}
+			}
+		})
+	}
+}
+func TestIterator_Remove(t *testing.T) {
+	tests := []struct {
+		name      string
+		loopNext  int
+		errStr    string
+		s         *Stack
+		toCompare []interface{}
+	}{
+		{"empty/error", 0, coll.ErrorIteratorHasNext,
+			New(),
+			[]interface{}{}},
+		{"!empty/error", 1, coll.ErrorIteratorHasNext,
+			NewBySlice([]interface{}{0}),
+			[]interface{}{0}},
+		{"!empty/error/withOutNext", 0, coll.ErrorIteratorRemove,
+			NewBySlice([]interface{}{0}),
+			[]interface{}{0}},
+		{"!empty/error/doubleRemove", 0, coll.ErrorIteratorRemove,
+			NewBySlice([]interface{}{0, 1}),
+			[]interface{}{0}},
+		{"!empty/ok/first", 0, "",
+			NewBySlice([]interface{}{0}),
+			[]interface{}{}},
+		{"!empty/ok", 1, "",
+			NewBySlice([]interface{}{0, 1}),
+			[]interface{}{1}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			iterator := test.s.Iterator()
+			for i := 0; i < test.loopNext; i++ {
+				iterator.HasNext()
+				_, _ = iterator.Next()
+			}
+
+			iterator.HasNext()
+			if test.name != "!empty/error/withOutNext" {
+				_, _ = iterator.Next()
+			}
+			if test.name == "!empty/error/doubleRemove" {
+				_ = iterator.Remove()
+			}
+			err := iterator.Remove()
+
+			if !checkValuesAndOrder(test.s, test.toCompare) {
+				tt.Errorf("checkValuesAndOrder: FAIL")
+			}
+
+			if test.errStr == "" {
+				if err != nil {
+					tt.Errorf("error detected: %v", err.Error())
+				}
+			} else {
+				if err == nil {
+					tt.Errorf("error not detected")
+				} else {
+					if err.Error() != test.errStr {
+						tt.Errorf("wrong error")
+					}
+				}
 			}
 		})
 	}

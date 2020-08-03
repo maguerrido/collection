@@ -4,7 +4,10 @@
 // Package list implements a doubly-linked list.
 package list
 
-import "fmt"
+import (
+	"fmt"
+	coll "github.com/maguerrido/collection"
+)
 
 // Element of a list.
 type Element struct {
@@ -188,6 +191,17 @@ func (l *List) Get(index int) *Element {
 // Time complexity: O(1).
 func (l *List) IsEmpty() bool {
 	return l.len == 0
+}
+
+func (l *List) Iterator() coll.Iterator {
+	return &iterator{
+		l:           l,
+		prev:        nil,
+		this:        nil,
+		index:       -1,
+		lastCommand: -1,
+		lastHasNext: false,
+	}
 }
 
 // Len returns the current length of the list.
@@ -548,4 +562,66 @@ func (l *List) unlink(e *Element) {
 	}
 	e.next = nil
 	e.prev = nil
+}
+
+type iterator struct {
+	l           *List
+	prev, this  *Element
+	index       int
+	lastCommand int
+	lastHasNext bool
+}
+
+const (
+	iteratorCommandHasNext = 0
+	iteratorCommandNext    = 1
+	iteratorCommandRemove  = 2
+)
+
+func (i *iterator) ForEach(action func(v *interface{})) {
+	if action != nil {
+		for e := i.l.front; e != nil; e = e.next {
+			action(&e.value)
+		}
+	}
+}
+
+func (i *iterator) HasNext() bool {
+	i.lastCommand = iteratorCommandHasNext
+	i.lastHasNext = i.index < i.l.len-1
+	return i.lastHasNext
+}
+
+func (i *iterator) Next() (interface{}, error) {
+	if i.lastCommand != iteratorCommandHasNext {
+		return nil, fmt.Errorf(coll.ErrorIteratorNext)
+	} else if !i.lastHasNext {
+		return nil, fmt.Errorf(coll.ErrorIteratorHasNext)
+	}
+
+	if i.this == nil {
+		i.this = i.l.front
+	} else {
+		i.prev = i.this
+		i.this = i.this.next
+	}
+	i.index++
+	i.lastCommand = iteratorCommandNext
+
+	return i.this.value, nil
+}
+
+func (i *iterator) Remove() error {
+	if !i.lastHasNext {
+		return fmt.Errorf(coll.ErrorIteratorHasNext)
+	} else if i.lastCommand != iteratorCommandNext {
+		return fmt.Errorf(coll.ErrorIteratorRemove)
+	}
+
+	i.l.RemoveElement(i.this)
+	i.this = i.prev
+	i.index--
+	i.lastCommand = iteratorCommandRemove
+
+	return nil
 }

@@ -4,7 +4,10 @@
 // Package sortedset implements an AVL tree with ordered set behaviors.
 package sortedset
 
-import "fmt"
+import (
+	"fmt"
+	coll "github.com/maguerrido/collection"
+)
 
 // node of a AVL tree.
 type node struct {
@@ -197,6 +200,26 @@ func doRecursive(n *node, procedures ...func(v interface{})) {
 // Time complexity: O(1).
 func (s *SortedSet) IsEmpty() bool {
 	return s.root == nil
+}
+
+func (s *SortedSet) Iterator() coll.Iterator {
+	slice := make([]*node, 0, s.Len())
+	nodes(s.root, &slice)
+	return &iterator{
+		nodes:       slice,
+		index:       -1,
+		lastCommand: -1,
+		lastHasNext: false,
+	}
+}
+
+func nodes(root *node, slice *[]*node) {
+	if root == nil {
+		return
+	}
+	nodes(root.left, slice)
+	*slice = append(*slice, root)
+	nodes(root.right, slice)
 }
 
 // Len returns the current length of the set.
@@ -398,4 +421,50 @@ func stringRecursive(n *node) string {
 		return ""
 	}
 	return stringRecursive(n.left) + fmt.Sprintf("%v ", n.value) + stringRecursive(n.right)
+}
+
+type iterator struct {
+	nodes       []*node
+	index       int
+	lastCommand int
+	lastHasNext bool
+}
+
+const (
+	iteratorCommandHasNext = 0
+	iteratorCommandNext    = 1
+	// iteratorCommandRemove  = 2
+)
+
+func (i *iterator) ForEach(action func(v *interface{})) {
+	if action != nil {
+		for _, n := range i.nodes {
+			if n != nil {
+				action(&n.value)
+			}
+		}
+	}
+}
+
+func (i *iterator) HasNext() bool {
+	i.lastCommand = iteratorCommandHasNext
+	i.lastHasNext = i.index < len(i.nodes)-1
+	return i.lastHasNext
+}
+
+func (i *iterator) Next() (interface{}, error) {
+	if i.lastCommand != iteratorCommandHasNext {
+		return nil, fmt.Errorf(coll.ErrorIteratorNext)
+	} else if !i.lastHasNext {
+		return nil, fmt.Errorf(coll.ErrorIteratorHasNext)
+	}
+
+	i.index++
+	i.lastCommand = iteratorCommandNext
+
+	return i.nodes[i.index].value, nil
+}
+
+func (i *iterator) Remove() error {
+	return fmt.Errorf(coll.ErrorIteratorRemoveNotSupported)
 }
